@@ -8,6 +8,7 @@ A library for Time Series exploration, analysis & modelling. This includes -
 
 ## Example
 ****
+<img style="float: right;" src="examples/example_gif.gif"  width='100%'>
 
 ## Installation
 ****
