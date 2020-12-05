@@ -1,4 +1,4 @@
-<img style="float: right;" src="tseuler/static/logo.png"  width='100%'>
+<img style="float: right;" src="examples/logo_big.png"  width='100%'>
 
 # tseuler
 A library for Time Series exploration, analysis & modelling. This includes -
@@ -34,6 +34,16 @@ pip install tseuler
 
 ## Versions
 ****
+
+`tseuler` has been built upon:-
+
+- pandas
+- numpy
+- panel
+- altair
+- matplotlib
+- statsmodels
+
 <u>v0.0.1 : Original Package</u>
 - Added TseulerBoard
 

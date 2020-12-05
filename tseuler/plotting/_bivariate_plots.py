@@ -4,6 +4,7 @@ import altair as alt
 import panel as pn
 import pandas as pd
 
+plt.style.use('ggplot')
 alt.data_transformers.disable_max_rows()
 
 

@@ -96,7 +96,7 @@ class LinkedCategoricalFilterSlab:
         return res[:-2]
 
     def get_view(self):
-        _desc = pn.Column('### Categorical Filters :', pn.pane.HTML('Filtering the DataFrame through Categorrical Depths', margin=(5, 5,5,5)))
+        _desc = pn.Column('### Categorical Filters :', pn.pane.HTML('Dataframe categorical depth filtering', margin=(5, 5,5,5)))
         _desc = [_desc]+[k.selector for k in self.linked_cat_list]
         return pn.Row(*_desc, margin=(-20,5,-20,5))
 

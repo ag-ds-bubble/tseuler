@@ -137,12 +137,7 @@ def get_plot(plot_data, variate_type, plot_name, freq_variant, freq_agg, force_i
                                     xlabel = plot_data.index.name,
                                     ylabel = x1_label)
 
-    elif variate_type == 'UV' and plot_name == TS_UV_PLOTS[12]:
-        
-        return uv_fourierSmoothPlot(data = plot_data,
-                                    engine = plotting_engine,
-                                    xlabel = plot_data.index.name,
-                                    ylabel = x1_label)
+
 
 
 
@@ -201,6 +196,9 @@ def get_plot(plot_data, variate_type, plot_name, freq_variant, freq_agg, force_i
                              xlabel = plot_data.index.name,
                              ylabel1 = y_label,
                              ylabel2 = x1_label)
+
+
+
 
 
 

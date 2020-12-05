@@ -195,17 +195,20 @@ class TseulerBoard:
         # Check if the data conforms to the following dt_freq
         if categorical_columns:
             for egid, eg in tsdata.groupby(categorical_columns):
-                match1 = pd.infer_freq(eg.index) != dt_freq
-                match2 = 'W-' in pd.infer_freq(eg.index)
-                match2 = 'Q-' in pd.infer_freq(eg.index)
-                if not any([match1, match2]):
+                match1 = pd.infer_freq(eg.index) == dt_freq
+                match2 = 'W' in pd.infer_freq(eg.index)
+                match3 = 'Q' in pd.infer_freq(eg.index)
+                if not any([match1, match2, match3]):
                     _resp = ''
                     for eccol in categorical_columns:
                         if len(eg[eccol].unique()) > 1 : raise ValueError("Wrong Grouping, Check!")
                         _resp+=eccol+'('+str(eg[eccol].unique()[0])+')'+'→'
                     raise ValueError(f"Dataframe with filter of '{_resp[:-1]}' does not have date_range frequency conforming to freq={dt_freq}")
         else:
-            if pd.infer_freq(tsdata.index) != dt_freq:
+            match1 = pd.infer_freq(tsdata.index) == dt_freq
+            match2 = 'W' in pd.infer_freq(tsdata.index)
+            match3 = 'Q' in pd.infer_freq(tsdata.index)
+            if not any([match1, match2, match3]):
                 raise ValueError(f"DateTime index for does not have date_range frequency conforming to freq={dt_freq}")
 
         return tsdata, target_columns, categorical_columns, freq_conv_agg
