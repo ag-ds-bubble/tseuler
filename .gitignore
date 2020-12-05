@@ -1,0 +1,35 @@
+# Cache & data
+__pycache__/
+*__pycache__/
+**__pycache__/
+
+*.pyc
+**.pyc
+
+.csv
+*.csv
+**.csv
+
+.DS_Store
+*.DS_Store
+**.DS_Store
+
+# Distribution
+build/
+dist/
+tseuler.egg-info/
+
+# Editor and Notebook
+.vscode
+.ipynb_checkpoints/
+# *.ipynb
+# **.ipynb
+
+# Virtual Environments
+tseuler_venv/
+tseuler_venv_dev/
+
+# Testing files
+temptest.py
+Dummy Testing.ipynb
+debug.log
