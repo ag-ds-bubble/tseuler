@@ -44,29 +44,46 @@ class DataSummaryPanel:
         nan_pane = self.get_donutplot(self.nan_dict, 'Missing')
         tnan = sum(self.nan_dict.values())
         html_phfillers = []
+        
         for col, colval in sorted(self.nan_dict.items(), key=itemgetter(1), reverse=True)[:3]:
             if len(col)>10: col = col[:8]+'..'
             html_phfillers.append(col)
-            html_phfillers.append(get_valhexrg(colval/tnan))
-            html_phfillers.append(str(round(100*colval/tnan, 3)))
-            
-        self.nan_summary_table = self.nan_summary_table.format('#8a8a8a',# Light Background
-                                                     *html_phfillers)
+            try:
+                _val = get_valhexrg(colval/tnan) 
+                _pct = str(round(100*colval/tnan, 3))
+                html_phfillers.append(_val)
+                html_phfillers.append(_pct)
+            except:
+                _val = '#000000'
+                _pct = 0.0
+                html_phfillers += [_val, _pct]
+        
+        if len(html_phfillers)!=10:
+            html_phfillers += ['--', '#000000', 0.0]*(3-(len(html_phfillers)-1)//3)
+
+        self.nan_summary_table = self.nan_summary_table.format('#8a8a8a',*html_phfillers)
         nan_donutplot = self.get_donutplot(self.nan_dict, 'Missing')
         nan_table = pn.pane.HTML(self.nan_summary_table, margin=(100, 5, 5, -30))
         nan_pane = pn.Row(nan_donutplot, nan_table)
         nan_pane = pn.Column(nan_summary, pn.layout.Divider(), nan_pane)
 
-        top_slab = pn.Row(logo_pane, dtype_pane, nan_pane, margin=(5,5,-20,5))
+        top_slab = pn.Row(logo_pane, dtype_pane, nan_pane, margin=(5,5,5,5))
         return top_slab
 
     def get_donutplot(self, datadict, _type = 'dtype'):
+        
         # Data
         x = Counter(datadict)
         data = pd.DataFrame.from_dict(dict(x), orient='index').reset_index()
         data = data.rename(index=str, columns={0:'value', 'index':_type})
         data['angle'] = data['value']/sum(x.values()) * 2*pi
-        data['color'] = Category20c[len(x)]
+
+        if len(x)>=3:
+            data['color'] = Category20c[len(x)] 
+        else:
+            data['color'] = Category20c[3][:len(x)]
+        data.fillna(0.0, inplace=True)
+
         # Plotting code
         p = figure(plot_height=200, plot_width=200, title=f"{_type} - Distribution",
                    toolbar_location=None, tools="hover",tooltips=[(f"{_type}", f"@{_type}"),("Value", "@value")])

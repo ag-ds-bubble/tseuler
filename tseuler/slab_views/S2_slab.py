@@ -54,7 +54,7 @@ class SelectorDD:
         # Get the options and vlaue
         self.options = sorted(self.parent_df[self.name].unique().tolist())
         self.value = self.options[0]
-        self.width = int(np.clip(int(max([len(k) for k in self.options])*11), 80, 150))
+        self.width = int(np.clip(int(max([len(str(k)) for k in self.options])*11), 80, 150))
         if calltype == 'event':
             self.value = self.selector.value
         # Filter the dataframe
@@ -96,7 +96,7 @@ class LinkedCategoricalFilterSlab:
         return res[:-2]
 
     def get_view(self):
-        _desc = pn.Column('### Categorical Filters :', pn.pane.HTML('Filtering the DataFrame through Categorrical Depths', margin=(-10, 5,5,5)))
+        _desc = pn.Column('### Categorical Filters :', pn.pane.HTML('Filtering the DataFrame through Categorrical Depths', margin=(5, 5,5,5)))
         _desc = [_desc]+[k.selector for k in self.linked_cat_list]
         return pn.Row(*_desc, margin=(-20,5,-20,5))
 
@@ -104,6 +104,8 @@ class LinkedCategoricalFilterSlab:
         return "".join([k.name+'('+str(k.selector.value)+')'+'→' for k in self.linked_cat_list])[:-1]
     
     def get_filtereddata(self):
-        return self.linked_cat_list[-1].filtered_df.copy()
-  
+        if self.catcols:
+            return self.linked_cat_list[-1].filtered_df.copy()
+        else:
+            return self.data
   

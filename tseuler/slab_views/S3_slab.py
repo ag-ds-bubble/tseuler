@@ -40,7 +40,7 @@ class PlottingPanel(param.Parameterized):
 
 
 
-    def __init__(self, filterObj, cat_cols, target_cols, data_freq, freq_agg_func, **kwargs):
+    def __init__(self, filterObj, cat_cols, target_cols, data_freq, freq_agg_func, force_interactive, **kwargs):
         super(PlottingPanel, self).__init__(**kwargs)
         self.filter_obj = filterObj
         self.filtered_data = self.filter_obj.get_filtereddata()
@@ -54,6 +54,7 @@ class PlottingPanel(param.Parameterized):
         self.TS_TV_PLOTS = TS_TV_PLOTS
         self.data_freq = data_freq
         self.freq_agg_func = freq_agg_func
+        self.force_interactive = force_interactive
 
         self.vt_flag = False  # Variant Transition Flag   
 
@@ -145,11 +146,11 @@ class PlottingPanel(param.Parameterized):
         self.freq_variantPanel = pn.panel(self.param.freq_variant,
                                           widgets = {'freq_variant' : {'widget_type' : pn.widgets.Select,
                                                                         'width' : 100,
-                                                                        'margin' : (-20,5,5,-100)}})
+                                                                        'margin' : (-5,5,5,-100)}})
         
         S3L3 = pn.Row(self._update_plot_slab, dtfreq_html, self.freq_variantPanel, margin=(-490, 5,5, 5))
         
-        S3 = pn.Column(pn.Row(S3L1, S3L2), S3L3, margin=(-20,5,-20,5))
+        S3 = pn.Column(pn.Row(S3L1, S3L2), S3L3, margin=(5,5,-20,5))
 
         return S3
     
@@ -175,7 +176,7 @@ class PlottingPanel(param.Parameterized):
         self.y_trnsrmPanel.disabled = True
         self.y_Lags = 0
         self.y_Transformation = 'Actual'
-        
+
         self.x1_selectPanel.disabled = False
         self.x1_lagPanel.disabled = False
         self.x1_trnsrmPanel.disabled = False
@@ -228,13 +229,16 @@ class PlottingPanel(param.Parameterized):
         self._update_plotting_data()
         self.param.plot_variant.objects = self.TS_BV_PLOTS
         self.plot_variant = self.TS_BV_PLOTS[0]
-
         self.vt_flag = True
         self._update_plotting_data()
 
     def _tv_view(self):
 
         self.selectable_cols = [k for k in self.filtered_data.columns if k not in self.cat_cols+self.target_cols]
+
+        if self.selectable_cols==[]:
+            self.analysis_variantPanel.value = 'UV'
+            self.analysis_variant = 'UV'
 
         self.param.y_Select.objects = self.target_cols
         self.y_Select = self.target_cols[0]
@@ -281,6 +285,12 @@ class PlottingPanel(param.Parameterized):
             self._bv_view()
         elif self.analysis_variant == 'TV':
             self._tv_view()
+            # try:
+            #     pass
+            # except Exception as e:
+            #     print(e)
+            #     self.analysis_variantPanel.value = 'UV'
+            #     self.analysis_variant = 'UV'
 
 
     @param.depends('y_Select','y_Lags','y_Transformation',
@@ -303,36 +313,45 @@ class PlottingPanel(param.Parameterized):
             self.plotting_data = tempDF.copy()
             
         elif all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'BV' and self.vt_flag:
+            # If the x1_selection and x2_selection is same, then remove that option from x2_selction
+            if len(set([self.y_Select, self.x1_Select])) != 2:
+                _tempobjects = [k for k in self.selectable_cols if k not in [self.y_Select, self.x1_Select]]
+                if _tempobjects == []:
+                    self.analysis_variantPanel.value = 'UV'
+                    self.analysis_variant = 'UV'
+                else:
+                    self.param.x2_Select.objects = _tempobjects
+                    self.x2_Select = _tempobjects[0]
+            else:
+                tempDF = pd.DataFrame(index=self.filtered_data.index)
+                tempDF['Y'] = self.filtered_data[self.y_Select].copy()
+                tempDF['X1'] = self.filtered_data[self.x1_Select].copy()
+                
+                respacket = get_transformed_data(tempDF.Y,
+                                                self.y_Transformation,
+                                                self.y_Lags,
+                                                self.data_freq,
+                                                self.freq_variant)
+                tempDF['plotY'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
+                if tarnsformERR: 
+                    self.y_trnsrmPanel.value = 'Actual'
+                    # self.err_dispPanel = pn.panel('<marquee style="color:white; background-color:#660404;">{0}</marquee>'.format(tarnsformERR), width = 660)
 
-            tempDF = pd.DataFrame(index=self.filtered_data.index)
-            tempDF['Y'] = self.filtered_data[self.y_Select].copy()
-            tempDF['X1'] = self.filtered_data[self.x1_Select].copy()
-            
-            respacket = get_transformed_data(tempDF.Y,
-                                             self.y_Transformation,
-                                             self.y_Lags,
-                                             self.data_freq,
-                                             self.freq_variant)
-            tempDF['plotY'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
-            if tarnsformERR: 
-                self.y_trnsrmPanel.value = 'Actual'
-                # self.err_dispPanel = pn.panel('<marquee style="color:white; background-color:#660404;">{0}</marquee>'.format(tarnsformERR), width = 660)
+                respacket = get_transformed_data(tempDF.X1,
+                                                self.x1_Transformation,
+                                                self.x1_Lags,
+                                                self.data_freq,
+                                                self.freq_variant)
+                tempDF['plotX1'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
+                if tarnsformERR:
+                    self.x1_trnsrmPanel.value = 'Actual'
 
-            respacket = get_transformed_data(tempDF.X1,
-                                             self.x1_Transformation,
-                                             self.x1_Lags,
-                                             self.data_freq,
-                                             self.freq_variant)
-            tempDF['plotX1'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
-            if tarnsformERR:
-                self.x1_trnsrmPanel.value = 'Actual'
-
-            self.plotting_data = tempDF.copy()
+                self.plotting_data = tempDF.copy()
 
         elif all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'TV' and self.vt_flag:
             # If the x1_selection and x2_selection is same, then remove that option from x2_selction
             if len(set([self.y_Select, self.x1_Select, self.x2_Select])) != 3:
-                _tempobjects = [k for k in self.selectable_cols if k not in [self.x1_Select, self.x2_Select]]
+                _tempobjects = [k for k in self.selectable_cols if k not in [self.y_Select, self.x1_Select, self.x2_Select]]
                 if _tempobjects == []:
                     self.analysis_variantPanel.value = 'UV'
                     self.analysis_variant = 'UV'
@@ -391,21 +410,23 @@ class PlottingPanel(param.Parameterized):
                 # Return the Plot
                 self.plot_namePane = pn.pane.HTML(f'''<p style="font-size:2.4em; color:#8a8a8a">{self.analysis_variant} : {self.plot_variant.split(':')[0].strip()}</p>
                                                     <p style="font-size:.6em; color:#8a8a8a"><i>*NOTE:By Default plots are interactive, but
-                                                    if the datapoints exceed 2500 plot switch to static</i></p>''', margin= (-30,5,5,5))
+                                                    if the datapoints exceed 2500 plot switch to static</i></p>''', margin= (-5,5,5,5))
                 self.plot_filterPanel = pn.pane.HTML(f'''<p style="font-size:0.9em; color:#4a4a4a">{self.filter_obj.get_current_filter_depth()}</p>''', margin= (-5,5,5,5))
                 if self.plot_variant == 'CandleStick Chart : Financial Analysis':
                     _plt = get_plot(plot_data = self.filtered_data,
                                     variate_type = self.analysis_variant,
                                     plot_name = self.plot_variant,
                                     freq_variant = self.freq_variant,
-                                    freq_agg = self.freq_agg_func)
+                                    freq_agg = self.freq_agg_func,
+                                    force_interactive = self.force_interactive)
                 else:                    
                     _plt = get_plot(plot_data = self.plotting_data,
                                     variate_type = self.analysis_variant,
                                     plot_name = self.plot_variant,
                                     freq_variant = self.freq_variant,
                                     freq_agg = self.freq_agg_func,
-                                    y_label = self.y_Select, x1_label = self.x1_Select, x2_label = self.x2_Select)
+                                    y_label = self.y_Select, x1_label = self.x1_Select, x2_label = self.x2_Select,
+                                    force_interactive = self.force_interactive)
                     
                 _pane = pn.Column(self.plot_namePane, self.plot_filterPanel, _plt, width=660)
                 return _pane

@@ -14,8 +14,9 @@ TS_UV_PLOTS = ['Line Plot : Overtime Analysis',
                 'Q-Q Plot : Distribution Analysis',
                 'Moving Average : Series Smoothing',
                 'Simple Exponential : Series Smoothing',
-                'Fourier : Series Smoothing']
-    
+                'Fourier : Series Smoothing',
+                'Chop Chart : Overtime Analysis',]
+                
 TS_BV_PLOTS = ['Line Plot : Overtime Analysis',
                'Area Plot : Overtime Analysis',
                'Violin Plot : Distribution Analysis',

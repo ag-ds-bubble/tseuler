@@ -15,7 +15,6 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.graphics.gofplots import qqplot
 
 
-
 def uv_linePlot(data, engine, xlabel, ylabel):
 
     data = data.copy() 
@@ -424,7 +423,7 @@ def uv_histPlot(data, engine, xlabel, ylabel):
         upper = base.encode(alt.X('{0}:T'.format(data.index.name), 
                                 scale=alt.Scale(domain=brush)))
         upper.configure_title(fontSize=25)
-        upper.encoding.x.title = xlabel
+        upper.encoding.x.title = ''
         upper.encoding.y.title = ylabel
         upper.configure_axisBottom(labelFontSize = 15)
         upper.configure_axisLeft(labelFontSize = 15)
@@ -746,3 +745,64 @@ def uv_candlestickPlot(data, engine, xlabel, ylabel):
         # Concatenated Chart
         p = alt.vconcat(candlestick_chart, volume_chart, lower).configure_concat(spacing=0)
         return p
+
+
+def uv_chopPlot(data, engine, xlabel, ylabel):
+    data = data.copy()
+    data.rename(columns={'plotX1':ylabel}, inplace=True)
+    
+    if engine == 'Static':
+        fig, axes = plt.subplots(figsize=(9.4,5))
+        data[ylabel].hist(ax=axes)
+
+        axes.set_xlabel(xlabel, fontsize = 15)
+        axes.set_ylabel(ylabel, fontsize = 15)
+        axes.grid(b=True, which='major', color='k', linewidth=0.25)
+        axes.grid(b=True, which='minor', color='k', linewidth=0.125)
+        
+        plt.close()
+        return pn.pane.Matplotlib(fig, tight=True)
+    
+    elif engine == 'Interactive':
+        
+        brush = alt.selection(type='interval', encodings=['x'])
+        source = data[ylabel].reset_index()
+        base = alt.Chart(source).mark_bar()
+        if any(data[ylabel].dropna()<0):
+            base = base.transform_calculate(negative='datum.{0} < 0'.format(ylabel))
+            base = base.encode(x = alt.X('{0}:T'.format(data.index.name)),
+                               y = alt.Y('{0}:Q'.format(ylabel), axis=alt.Axis(format='~s')),
+                               tooltip = ylabel,
+                               color = alt.Color('negative:N', legend=None))
+        else:
+            base = base.encode(x = alt.X('{0}:T'.format(data.index.name)),
+                               y = alt.Y('{0}:Q'.format(ylabel), axis=alt.Axis(format='~s')),
+                               tooltip = ylabel)
+        base = base.properties(width = 600, height = 320)
+
+        upper = base.encode(alt.X('{0}:T'.format(data.index.name), 
+                                scale=alt.Scale(domain=brush)))
+        upper.configure_title(fontSize=25)
+        upper.encoding.x.title = xlabel
+        upper.encoding.y.title = ylabel
+        upper.configure_axisBottom(labelFontSize = 15)
+        upper.configure_axisLeft(labelFontSize = 15)
+
+        lower = base.properties(height=30).add_selection(brush)
+        lower.title = ''
+        lower.encoding.x.title = 'Interval Selection'
+        lower.encoding.y.title = ''
+        lower.encoding.y.axis.title = ''
+        lower.configure_axisBottom(labelFontSize = 4)
+        lower.configure_axisLeft(labelFontSize = 1)
+        
+        line = alt.Chart()
+        line = line.mark_rule(color='firebrick')
+        line = line.encode(y='mean({0}):Q'.format(ylabel),
+                        size=alt.SizeValue(3))
+        line = line.transform_filter(brush)
+        upper = alt.layer(upper, line, data=source)
+
+        p = alt.vconcat(upper, lower).configure_concat(spacing=2)
+        return p
+

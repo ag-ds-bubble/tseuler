@@ -7,7 +7,8 @@ import panel as pn
 pn.extension()
 
 class PanelView:
-    def __init__(self, data, datadesc, dt_freq, dt_format, catcols, targetcols, freq_conv_agg):
+    def __init__(self, data, datadesc, dt_freq, dt_format,
+                 catcols, targetcols, freq_conv_agg, force_interactive):
         # Initialisations
         self.initdata = data.copy()
         self.initdata.index.name = 'dt'
@@ -15,11 +16,12 @@ class PanelView:
         self.catcols = catcols
         self.targets = targetcols
         self.freq_conv_agg = freq_conv_agg
+        self.force_interactive = force_interactive
         # Initialise Slabs
         self.S1_summ = DataSummaryPanel(data=self.initdata, data_desc = datadesc, dt_freq=dt_freq)
         self.S2_lcfs = LinkedCategoricalFilterSlab(data=self.initdata.copy(), catcols = self.catcols)
         self.S3_pltp = PlottingPanel(filterObj=self.S2_lcfs, cat_cols = self.catcols, target_cols = self.targets,
-                                     data_freq=dt_freq, freq_agg_func = self.freq_conv_agg)
+                                     data_freq=dt_freq, freq_agg_func = self.freq_conv_agg, force_interactive = self.force_interactive)
         # Prepare Servable View
         self.cat_buttons = {}
         self._prep_view()
@@ -40,5 +42,5 @@ class PanelView:
                               filter_slab,
                               pn.layout.Divider(),
                               plotting_slab,
-                              background='white', height = 1180)
+                              background='white', height = 1220)
 

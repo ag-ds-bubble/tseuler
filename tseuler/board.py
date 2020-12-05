@@ -85,6 +85,9 @@ class TseulerBoard:
             - 'min' : tsdata.groupby(categorical_columns).agg('min')
             - 'max' : tsdata.groupby(categorical_columns).agg('max')
 
+    force_interactive : bool, optional
+        Wether to force the plots to be interactive
+
     Methods
     -------
     get_board
@@ -106,7 +109,8 @@ class TseulerBoard:
                  categorical_columns : list = [],
                  dt_format : str = '%Y-%m-%d',
                  dt_freq : str = 'MS',
-                 freq_conv_agg : str = 'mean'):
+                 freq_conv_agg : str = 'mean',
+                 force_interactive : bool = False):
 
         # Attributes
         self.usable_cols = []
@@ -114,7 +118,7 @@ class TseulerBoard:
         self.data_desc = data_desc
         # Sanity Checks
         sanity_packet = self._check_n_prep(tsdata.copy(), target_columns, categorical_columns,
-                                           dt_format, dt_freq, freq_conv_agg)
+                                           dt_format, dt_freq, freq_conv_agg, force_interactive)
 
         self.tsdata = sanity_packet[0]
         self.target_columns = sanity_packet[1]
@@ -122,14 +126,18 @@ class TseulerBoard:
         self.freq_conv_agg = sanity_packet[3]
         self.dt_freq = dt_freq
         self.dt_format = dt_format
+        self.force_interactive = force_interactive
 
     def __add__(self, new_board):
         return NotImplemented
 
-    def _check_n_prep(self, tsdata, target_columns, categorical_columns, dt_format, dt_freq, freq_conv_agg):
+    def _check_n_prep(self, tsdata, target_columns, categorical_columns, dt_format,
+                      dt_freq, freq_conv_agg, force_interactive):
         # Sanity check for the dataframe
         # Check if the dataframe sent is empty
         assert not tsdata.empty, "'tsdata' DataFrame can not be an empty pandas dataframe"
+        if not isinstance(force_interactive, bool):
+            raise ValueError("'force_interactive' parameter should be of type `bool`")
         # Check if the dt_format is date parsable
         # Frequency and Available Analysis Freqency
         if dt_freq not in TS_FREQUENCIES:
@@ -180,29 +188,32 @@ class TseulerBoard:
             raise ValueError(f"'data_desc' should be of type 'str'")
 
         # Usable and Unusable columns
-        self.usable_cols = [e for e in tsdata.columns if tsdata[e].dtype != 'object']
-        self.dropped_cols = [e for e in tsdata.columns if tsdata[e].dtype == 'object']
+        self.usable_cols = [e for e in tsdata.columns if any(a in tsdata[e].dtype.__str__() for a in  ['int', 'float', 'category'])]
+        self.dropped_cols = [e for e in tsdata.columns if e not in self.usable_cols]
         tsdata = tsdata[self.usable_cols]
 
         # Check if the data conforms to the following dt_freq
         if categorical_columns:
             for egid, eg in tsdata.groupby(categorical_columns):
-                if pd.infer_freq(eg.index) != dt_freq:
+                match1 = pd.infer_freq(eg.index) != dt_freq
+                match2 = 'W-' in pd.infer_freq(eg.index)
+                match2 = 'Q-' in pd.infer_freq(eg.index)
+                if not any([match1, match2]):
                     _resp = ''
                     for eccol in categorical_columns:
                         if len(eg[eccol].unique()) > 1 : raise ValueError("Wrong Grouping, Check!")
-                        _resp+=eccol+'('+eg[eccol].unique()[0]+')'+'→'
+                        _resp+=eccol+'('+str(eg[eccol].unique()[0])+')'+'→'
                     raise ValueError(f"Dataframe with filter of '{_resp[:-1]}' does not have date_range frequency conforming to freq={dt_freq}")
         else:
-            if pd.infer_freq(eg.index) != dt_freq:
+            if pd.infer_freq(tsdata.index) != dt_freq:
                 raise ValueError(f"DateTime index for does not have date_range frequency conforming to freq={dt_freq}")
 
         return tsdata, target_columns, categorical_columns, freq_conv_agg
 
     def get_board(self):
         # Sends the board whose elements have been pre-attached
-        dash_panel =  PanelView(data = self.tsdata, datadesc = self.data_desc,
+        self.dash_panel =  PanelView(data = self.tsdata, datadesc = self.data_desc,
                                      dt_freq = self.dt_freq, dt_format = self.dt_format, freq_conv_agg = self.freq_conv_agg,
-                                     catcols = self.categorical_columns, targetcols = self.target_columns)
-        return dash_panel.view.servable()
+                                     catcols = self.categorical_columns, targetcols = self.target_columns, force_interactive = self.force_interactive)
+        return self.dash_panel.view.servable()
 

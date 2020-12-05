@@ -15,9 +15,6 @@
 # TODO : alt.renderers.set_embed_options(theme='dark'), Dark theme
 
 
-
-
-
 from ._univariate_plots import uv_linePlot, uv_areaPlot, uv_maSmoothPlot, uv_expSmoothPlot, uv_fourierSmoothPlot
 from ._univariate_plots import uv_boxPlot, uv_histPlot, uv_ridgePlot, uv_seasonalPlot
 from ._univariate_plots import uv_acfPlot, uv_pacfPlot, uv_qqPlot
@@ -33,7 +30,7 @@ from ._trivariate_plots import tv_linkedScatterPlot
 from ..static import TSEULER_CONFIGS,TS_UV_PLOTS,TS_BV_PLOTS,TS_TV_PLOTS
 
 
-def get_plot(plot_data, variate_type, plot_name, freq_variant, freq_agg,
+def get_plot(plot_data, variate_type, plot_name, freq_variant, freq_agg, force_interactive,
              y_label = None, x1_label = None, x2_label = None):
             
     datapoints = plot_data.shape[0]
@@ -41,6 +38,9 @@ def get_plot(plot_data, variate_type, plot_name, freq_variant, freq_agg,
 
     if plotting_engine == 'Interactive':
         plotting_engine = 'Interactive' if datapoints < 2500 else 'Static'
+
+    if force_interactive:
+        plotting_engine = 'Interactive'
 
     if variate_type == 'UV' and plot_name == TS_UV_PLOTS[0]:
 
@@ -131,6 +131,13 @@ def get_plot(plot_data, variate_type, plot_name, freq_variant, freq_agg,
                                 ylabel = x1_label)
 
     elif variate_type == 'UV' and plot_name == TS_UV_PLOTS[11]:
+        
+        return uv_fourierSmoothPlot(data = plot_data,
+                                    engine = plotting_engine,
+                                    xlabel = plot_data.index.name,
+                                    ylabel = x1_label)
+
+    elif variate_type == 'UV' and plot_name == TS_UV_PLOTS[12]:
         
         return uv_fourierSmoothPlot(data = plot_data,
                                     engine = plotting_engine,
