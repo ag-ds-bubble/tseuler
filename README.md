@@ -6,7 +6,7 @@ A library for Time Series exploration, analysis & modelling. This includes -
 - A mini Dashboard for Time Series Analysis, with multiple variations to each kind of analysis
 - Inherent Frequency adjustment & calculations
 
-**Note : ** This library is still under development, in pre-beta phase. Will be publish a full version of the same soon :)
+**Note :** This library is still under development, in pre-alpha phase. Will publish an alpha version soon :)
 
 
 ## Example
