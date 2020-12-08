@@ -16,7 +16,7 @@ Functionalities Include
 Functionalities Include:
 
     - Entropy Calculations
-    - Intervention Analysis (Future)
+    - Intervention Analysis (In Future)
 
 ## Example
 ****

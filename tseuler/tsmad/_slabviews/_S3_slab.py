@@ -2,7 +2,7 @@
 #       is ready and buttons are being updated
 
 
-from .._helpers import TS_UV_PLOTS, TS_BV_PLOTS, TS_TV_PLOTS, TS_FREQUENCIES_DESC, TS_FREQ_MAP, TS_FREQUENCIES_DESC
+from .._helpers import TS_UV_PLOTS, TS_BV_PLOTS, TS_TV_PLOTS, TS_FREQUENCIES_DESC, TS_FREQ_MAP
 from .._helpers import TSMAD_CONFIGS
 from .._helpers import stats_css, corr_css, table_html_1, table_html_2
 from .._helpers import get_transformed_data, prep_statmetric
@@ -33,14 +33,14 @@ class PlottingPanel(param.Parameterized):
     # Plot Selector
     plot_variant = param.Selector(objects=['--'])
     # Frequency Slector
-    freq_variant = param.Selector(objects=['--'])
+    freq_variant = param.String()
     # Plotting Data
     plotting_data = param.DataFrame()
     plotting_data_metrics = param.DataFrame()
 
 
 
-    def __init__(self, filterObj, cat_cols, target_cols, data_freq, freq_agg_func, force_interactive, **kwargs):
+    def __init__(self, filterObj, cat_cols, target_cols, data_freq, how_aggregate, force_interactive, **kwargs):
         super(PlottingPanel, self).__init__(**kwargs)
         self.filter_obj = filterObj
         self.filtered_data = self.filter_obj.get_filtereddata()
@@ -53,7 +53,7 @@ class PlottingPanel(param.Parameterized):
         self.TS_BV_PLOTS = TS_BV_PLOTS
         self.TS_TV_PLOTS = TS_TV_PLOTS
         self.data_freq = data_freq
-        self.freq_agg_func = freq_agg_func
+        self.how_aggregate = how_aggregate
         self.force_interactive = force_interactive
 
         self.vt_flag = False  # Variant Transition Flag   
@@ -144,7 +144,8 @@ class PlottingPanel(param.Parameterized):
             <i style="font-size:.6em; color:#8a8a8a">({1})</i></p> '.format(self.data_freq, TS_FREQUENCIES_DESC[self.data_freq]),
              margin=(-5,5,5,-300))
         self.freq_variantPanel = pn.panel(self.param.freq_variant,
-                                          widgets = {'freq_variant' : {'widget_type' : pn.widgets.Select,
+                                          widgets = {'freq_variant' : {'widget_type' : pn.widgets.TextInput,
+                                                                        'placeholder':'Frequency Variant',
                                                                         'width' : 100,
                                                                         'margin' : (-5,5,5,-100)}})
         
@@ -167,9 +168,7 @@ class PlottingPanel(param.Parameterized):
         self.param.x2_Select.objects = self.selectable_cols
         self.x2_Select = self.selectable_cols[0]
 
-        _afreqs = [TS_FREQUENCIES_DESC[k] for k in TS_FREQ_MAP[self.data_freq]]
-        self.param.freq_variant.objects = _afreqs
-        self.freq_variant = _afreqs[0]
+        self.freq_variantPanel = self.data_freq
 
         self.y_selectPanel.disabled = True
         self.y_lagPanel.disabled = True
@@ -285,12 +284,6 @@ class PlottingPanel(param.Parameterized):
             self._bv_view()
         elif self.analysis_variant == 'TV':
             self._tv_view()
-            # try:
-            #     pass
-            # except Exception as e:
-            #     print(e)
-            #     self.analysis_variantPanel.value = 'UV'
-            #     self.analysis_variant = 'UV'
 
 
     @param.depends('y_Select','y_Lags','y_Transformation',
@@ -300,19 +293,20 @@ class PlottingPanel(param.Parameterized):
         # Filter the plotting data
         self.filtered_data = self.filter_obj.get_filtereddata()
         # Prepare Plotting Data
-        if all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'UV' and self.vt_flag:
+        if all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'UV' and self.vt_flag and self.freq_variantPanel!=None:
             tempDF= pd.DataFrame(index=self.filtered_data.index)
             tempDF['X1'] = self.filtered_data[self.x1_Select].copy()
+            print(self.freq_variantPanel, '+', self.freq_variant)
             respacket = get_transformed_data(tempDF.X1,
                                             self.x1_Transformation,
                                             self.x1_Lags,
                                             self.data_freq,
-                                            self.freq_variant)
+                                            self.freq_variantPanel)
             tempDF['plotX1'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
             if tarnsformERR: self.y_trnsrmPanel.value = 'Actual'
             self.plotting_data = tempDF.copy()
             
-        elif all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'BV' and self.vt_flag:
+        elif all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'BV' and self.vt_flag and self.freq_variantPanel!=None:
             # If the x1_selection and x2_selection is same, then remove that option from x2_selction
             if len(set([self.y_Select, self.x1_Select])) != 2:
                 _tempobjects = [k for k in self.selectable_cols if k not in [self.y_Select, self.x1_Select]]
@@ -331,7 +325,7 @@ class PlottingPanel(param.Parameterized):
                                                 self.y_Transformation,
                                                 self.y_Lags,
                                                 self.data_freq,
-                                                self.freq_variant)
+                                                self.freq_variantPanel)
                 tempDF['plotY'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
                 if tarnsformERR: 
                     self.y_trnsrmPanel.value = 'Actual'
@@ -341,14 +335,14 @@ class PlottingPanel(param.Parameterized):
                                                 self.x1_Transformation,
                                                 self.x1_Lags,
                                                 self.data_freq,
-                                                self.freq_variant)
+                                                self.freq_variantPanel)
                 tempDF['plotX1'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
                 if tarnsformERR:
                     self.x1_trnsrmPanel.value = 'Actual'
 
                 self.plotting_data = tempDF.copy()
 
-        elif all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'TV' and self.vt_flag:
+        elif all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'TV' and self.vt_flag and self.freq_variantPanel!=None:
             # If the x1_selection and x2_selection is same, then remove that option from x2_selction
             if len(set([self.y_Select, self.x1_Select, self.x2_Select])) != 3:
                 _tempobjects = [k for k in self.selectable_cols if k not in [self.y_Select, self.x1_Select, self.x2_Select]]
@@ -417,14 +411,14 @@ class PlottingPanel(param.Parameterized):
                                     variate_type = self.analysis_variant,
                                     plot_name = self.plot_variant,
                                     freq_variant = self.freq_variant,
-                                    freq_agg = self.freq_agg_func,
+                                    how_aggregate = self.how_aggregate,
                                     force_interactive = self.force_interactive)
                 else:                    
                     _plt = get_plot(plot_data = self.plotting_data,
                                     variate_type = self.analysis_variant,
                                     plot_name = self.plot_variant,
                                     freq_variant = self.freq_variant,
-                                    freq_agg = self.freq_agg_func,
+                                    how_aggregate = self.how_aggregate,
                                     y_label = self.y_Select, x1_label = self.x1_Select, x2_label = self.x2_Select,
                                     force_interactive = self.force_interactive)
                     

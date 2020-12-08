@@ -326,6 +326,8 @@ def uv_seasonalPlot(data, engine, xlabel, ylabel, afreq, aggf):
     
     data = data.dropna().copy()
     data.rename(columns={'plotX1':ylabel}, inplace=True)
+    if isinstance(aggf, dict):
+        aggf = aggf[ylabel]
     data = data.groupby(['anfreq_label', 'anfreq_label1']).agg({ylabel: aggf}).reset_index()
     
     if engine == 'Static':

@@ -30,7 +30,7 @@ from ._trivariate_plots import tv_linkedScatterPlot
 from .._helpers import TSMAD_CONFIGS, TS_UV_PLOTS, TS_BV_PLOTS, TS_TV_PLOTS
 
 
-def get_plot(plot_data, variate_type, plot_name, freq_variant, freq_agg, force_interactive,
+def get_plot(plot_data, variate_type, plot_name, freq_variant, how_aggregate, force_interactive,
              y_label = None, x1_label = None, x2_label = None):
             
     datapoints = plot_data.shape[0]
@@ -79,7 +79,7 @@ def get_plot(plot_data, variate_type, plot_name, freq_variant, freq_agg, force_i
                                 xlabel = plot_data.index.name,
                                 ylabel = x1_label,
                                 afreq = freq_variant,
-                                aggf = freq_agg)
+                                aggf = how_aggregate)
                         
     elif variate_type == 'UV' and plot_name == TS_UV_PLOTS[5]:
         
