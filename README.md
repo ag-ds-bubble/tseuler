@@ -7,16 +7,16 @@ A library for Time Series exploration, analysis & modelling. This includes -
 As of now, this libray is in pre-alpha phase, i.e there is a lot of work still left before its first stable release.
 
 ### TSMAD - Time Series Mini Analysis DashBoard.
-Current Functionalities Include
+Functionalities Include
 
     - A mini Dashboard for Time Series Analysis, with multiple variations to each kind of analysis
     
 
 ### TSSTATS - Time Series Statistical Functions
-Current Functionalities Include:
+Functionalities Include:
 
     - Entropy Calculations
-    - Intervention Analysis
+    - Intervention Analysis (Future)
 
 ## Example
 ****
