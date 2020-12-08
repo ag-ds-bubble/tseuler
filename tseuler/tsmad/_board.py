@@ -116,6 +116,7 @@ class TSMAD:
         self.usable_cols = []
         self.dropped_cols = []
         self.data_desc = data_desc
+
         # Sanity Checks
         sanity_packet = self._check_n_prep(tsdata.copy(), target_columns, categorical_columns,
                                            dt_format, dt_freq, freq_conv_agg, force_interactive)
@@ -133,7 +134,7 @@ class TSMAD:
 
     def _check_n_prep(self, tsdata, target_columns, categorical_columns, dt_format,
                       dt_freq, freq_conv_agg, force_interactive):
-        # Sanity check for the dataframe
+
         # Check if the dataframe sent is empty
         assert not tsdata.empty, "'tsdata' DataFrame can not be an empty pandas dataframe"
         if not isinstance(force_interactive, bool):
