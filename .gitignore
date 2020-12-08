@@ -22,8 +22,6 @@ tseuler.egg-info/
 # Editor and Notebook
 .vscode
 .ipynb_checkpoints/
-# *.ipynb
-# **.ipynb
 
 # Virtual Environments
 tseuler_venv/
@@ -33,3 +31,5 @@ tseuler_venv_dev/
 temptest.py
 Dummy Testing.ipynb
 debug.log
+raw_datasets/
+tempbackup/

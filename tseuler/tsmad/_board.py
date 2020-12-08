@@ -1,17 +1,17 @@
 # TODO : Fix for analysis frequency mangement
 
 # Relative Imports
-from .static import TS_FREQUENCIES, AVAILABLE_AGG_FUNC
-from .panelview import PanelView
+from ._helpers import TS_FREQUENCIES, AVAILABLE_AGG_FUNC
+from ._panelview import PanelView
 
 import pandas as pd
 import numpy as np
 from datetime import datetime
 from tqdm import tqdm
 
-class TseulerBoard:
+class TSMAD:
     """
-    Time Series Mini Analysis Dashboard
+    TSMAD - Time Series Mini Analysis Dashboard
     -----------------------------------
     A Dashboard for Univariate, Bivariate and Trivariate analysis
     for the Time Series Datasets. 
@@ -99,7 +99,7 @@ class TseulerBoard:
     import tseuler import as tmd
 
     df = pd.read_csv('TimeSeriesdata-MS.csv', index_col=0)
-    tb = tmd.TseulerBoard(tsdata=df, data_desc='Temperature Data',
+    tb = tmd.TSMAD(tsdata=df, data_desc='Temperature Data',
                           target_columns = ['AverageTemperature'],
                           categorical_columns = ['Country', 'City'],
                           dt_format='%Y-%m-%d', dt_freq='MS')
@@ -180,9 +180,11 @@ class TseulerBoard:
         elif categorical_columns != []:
             for eachCatCol in categorical_columns:
                 tsdata[eachCatCol] = tsdata[eachCatCol].astype('category')
+        
         # Sanity check for freq_conv_agg
         if freq_conv_agg not in AVAILABLE_AGG_FUNC:
             raise ValueError(f"'freq_conv_agg' should be one of {AVAILABLE_AGG_FUNC}")
+        
         # Sanity check for freq_conv_agg
         if not isinstance(self.data_desc, str):
             raise ValueError(f"'data_desc' should be of type 'str'")

@@ -1,5 +1,8 @@
-from .board import TseulerBoard
-from .static import TSEULER_CONFIGS
+# Analysis Board
+from .tsmad import TSMAD
+from .tsmad._helpers._configs import TSMAD_CONFIGS
 
+# Statistical Functions
+from .tsstats import ApproximateEntropry, SampleEntropy
 
 __version__ = '0.0.1dev'

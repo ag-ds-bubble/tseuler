@@ -26,7 +26,7 @@ TS_BV_PLOTS = ['Line Plot : Overtime Analysis',
 
 TS_TV_PLOTS = ['Linked Scatter Plot : Relation Analysis']
 
-TSEULER_CONFIGS = {'plotting.default_engine' : 'Interactive',
+TSMAD_CONFIGS = {'plotting.default_engine' : 'Interactive',
                  'plotting.uv.ma_window' : 0.01,
                  'plotting.uv.exp_span' : 0.01,
                  'plotting.uv.fcomp_factor' : 0.01,}

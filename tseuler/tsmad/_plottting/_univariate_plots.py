@@ -1,6 +1,6 @@
 
-from ..static import TSEULER_CONFIGS
-from ..utils import get_rgbtohex
+from .._helpers import TSMAD_CONFIGS
+from ..._utils import get_rgbtohex
 
 from datetime import datetime
 import calendar
@@ -481,7 +481,7 @@ def uv_pacfPlot(data, engine, xlabel, ylabel):
 
 
 def uv_qqPlot(data, engine, xlabel, ylabel):
-    # Add Altair : https://altair-viz.github.io/gallery/scatter_qq.html
+
     data = data.copy()
     data.rename(columns={'plotX1':ylabel}, inplace=True)
 
@@ -509,7 +509,7 @@ def uv_maSmoothPlot(data, engine, xlabel, ylabel):
     # Data Prep
     data = data.copy() 
     data.rename(columns={'plotX1':ylabel}, inplace=True)
-    _config_mawin = TSEULER_CONFIGS['plotting.uv.ma_window']
+    _config_mawin = TSMAD_CONFIGS['plotting.uv.ma_window']
     if isinstance(_config_mawin, float):
         ma_win = int(_config_mawin*data.shape[0])
     elif isinstance(_config_mawin, int):
@@ -571,7 +571,7 @@ def uv_expSmoothPlot(data, engine, xlabel, ylabel):
     # Data Prep
     data = data.copy() 
     data.rename(columns={'plotX1':ylabel}, inplace=True)
-    _config_expspan = TSEULER_CONFIGS['plotting.uv.exp_span']
+    _config_expspan = TSMAD_CONFIGS['plotting.uv.exp_span']
     if isinstance(_config_expspan, float):
         exp_span = int(_config_expspan*data.shape[0])
     elif isinstance(_config_expspan, int):
@@ -632,7 +632,7 @@ def uv_fourierSmoothPlot(data, engine, xlabel, ylabel):
     # Data Prep
     data = data.dropna().copy() 
     data.rename(columns={'plotX1':ylabel}, inplace=True)
-    fcomp_factor = TSEULER_CONFIGS['plotting.uv.fcomp_factor']
+    fcomp_factor = TSMAD_CONFIGS['plotting.uv.fcomp_factor']
     y = data[ylabel].values
     n = len(y)
     x = data[ylabel].index

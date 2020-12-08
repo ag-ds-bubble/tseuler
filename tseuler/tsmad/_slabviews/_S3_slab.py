@@ -2,12 +2,12 @@
 #       is ready and buttons are being updated
 
 
-from ..static import TS_UV_PLOTS, TS_BV_PLOTS, TS_TV_PLOTS, TS_FREQUENCIES_DESC, TS_FREQ_MAP, TS_FREQUENCIES_DESC
-from ..static import TSEULER_CONFIGS
-from ..static import stats_css, corr_css, table_html_1, table_html_2
+from .._helpers import TS_UV_PLOTS, TS_BV_PLOTS, TS_TV_PLOTS, TS_FREQUENCIES_DESC, TS_FREQ_MAP, TS_FREQUENCIES_DESC
+from .._helpers import TSMAD_CONFIGS
+from .._helpers import stats_css, corr_css, table_html_1, table_html_2
+from .._helpers import get_transformed_data, prep_statmetric
 
-from ..stats import get_transformed_data, prep_statmetric
-from ..plotting import get_plot
+from .._plottting import get_plot
 
 import param
 import panel as pn

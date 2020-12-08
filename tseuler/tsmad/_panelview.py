@@ -1,6 +1,6 @@
-from .slab_views import DataSummaryPanel
-from .slab_views import LinkedCategoricalFilterSlab
-from .slab_views import PlottingPanel
+from ._slabviews import DataSummaryPanel
+from ._slabviews import LinkedCategoricalFilterSlab
+from ._slabviews import PlottingPanel
 
 import os
 import panel as pn
@@ -17,6 +17,7 @@ class PanelView:
         self.targets = targetcols
         self.freq_conv_agg = freq_conv_agg
         self.force_interactive = force_interactive
+        
         # Initialise Slabs
         self.S1_summ = DataSummaryPanel(data=self.initdata, data_desc = datadesc, dt_freq=dt_freq)
         self.S2_lcfs = LinkedCategoricalFilterSlab(data=self.initdata.copy(), catcols = self.catcols)

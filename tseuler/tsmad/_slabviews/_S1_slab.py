@@ -1,6 +1,6 @@
-from ..utils import get_datasummary, get_valhexrg
-from ..static import LOGOPATH, TSEULER_PANEL_DESCRIPTORS
-from ..static.htmls import dtype_summary_table, nan_summary_table
+from ..._utils import get_valhexrg
+from .._helpers import LOGOPATH, TSEULER_PANEL_DESCRIPTORS
+from .._helpers import dtype_summary_table, nan_summary_table, get_datasummary
 
 import os
 import panel as pn

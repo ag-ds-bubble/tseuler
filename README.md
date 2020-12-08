@@ -4,17 +4,19 @@
 A library for Time Series exploration, analysis & modelling. This includes -
 
 
-As of now, this libray is in pre-alpha phase, i.e there is a lot of work still left before its first stable release. Current functionalties include :-
+As of now, this libray is in pre-alpha phase, i.e there is a lot of work still left before its first stable release.
 
-- A mini Dashboard for Time Series Analysis, with multiple variations to each kind of analysis
-- Inherent Frequency adjustment & calculations
+### TSMAD - Time Series Mini Analysis DashBoard.
+Current Functionalities Include
 
-On later releases this library will include modelling approaches and analysis for:-
+    - A mini Dashboard for Time Series Analysis, with multiple variations to each kind of analysis
+    
 
-- In-Depth Automatic Analysis
-- Intervention analysis
-- Simple Modelling
+### TSSTATS - Time Series Statistical Functions
+Current Functionalities Include:
 
+    - Entropy Calculations
+    - Intervention Analysis
 
 ## Example
 ****
@@ -32,11 +34,11 @@ pip install tseuler
     
     ```py
     import pandas as pd
-    from tseuler import TseulerBoard
+    from tseuler import TSMAD
     # Read the Time Series DataFrame
     df = pd.read_csv('TimeSeriesdata3.csv', index_col=0)
     # Create a DashBoard!
-    tb = TseulerBoard(tsdata=df, data_desc='Temperature Data',
+    tb = TSMAD(tsdata=df, data_desc='Temperature Data',
                       target_column = ['AverageTemperature'],
                       categorical_columns = ['Country', 'City'])
 
@@ -56,5 +58,5 @@ pip install tseuler
 - statsmodels
 
 <u>v0.0.1 : Original Package</u>
-- Added TseulerBoard
+- Added TSMAD
 

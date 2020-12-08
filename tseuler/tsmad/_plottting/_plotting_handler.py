@@ -27,14 +27,14 @@ from ._bivariate_plots import bv_scatterPlot, bv_regPlot, bv_kdePlot, bv_jointPl
 
 from ._trivariate_plots import tv_linkedScatterPlot
 
-from ..static import TSEULER_CONFIGS,TS_UV_PLOTS,TS_BV_PLOTS,TS_TV_PLOTS
+from .._helpers import TSMAD_CONFIGS, TS_UV_PLOTS, TS_BV_PLOTS, TS_TV_PLOTS
 
 
 def get_plot(plot_data, variate_type, plot_name, freq_variant, freq_agg, force_interactive,
              y_label = None, x1_label = None, x2_label = None):
             
     datapoints = plot_data.shape[0]
-    plotting_engine = TSEULER_CONFIGS['plotting.default_engine']
+    plotting_engine = TSMAD_CONFIGS['plotting.default_engine']
 
     if plotting_engine == 'Interactive':
         plotting_engine = 'Interactive' if datapoints < 2500 else 'Static'

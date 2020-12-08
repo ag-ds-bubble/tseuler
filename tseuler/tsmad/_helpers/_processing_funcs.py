@@ -1,4 +1,5 @@
-from ..utils import get_valhexrg, get_valhex11rg
+from ..._utils import get_valhexrg, get_valhex11rg
+from ...tsstats import ApproximateEntropry, SampleEntropy
 
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import adfuller, kpss
@@ -150,19 +151,19 @@ def get_unifillers(dataDF):
     format_fillers+=[_negcolor, _negcounts, round(_negpct*100, 2)]
     format_fillers+=[round(_count, 3), round(_mean, 3), round(_std, 3), round(_min, 3),
                      round(_pct25, 3), round(_pct50, 3), round(_pct75, 3), round(_max, 3)]
-    #ADF
-    adfStationarity, adfStationarityPVal = check_stationarity(dataDF)
-    #KPSS
+    # ADF
+    adfStationarity, adfStationarityPVal = adf_test(dataDF)
+    # KPSS
     kpssStationarity, kpssStationarityPVal = kpss_test(dataDF)
-    #Entropy
+    # Entropy
     format_fillers+=[adfStationarity, round(adfStationarityPVal, 3), kpssStationarity, round(kpssStationarityPVal, 3)]
-    format_fillers.append(ApEn([e[0] for e in dataDF.values.tolist()], 2, 0.2*np.std([e[0] for e in dataDF.values.tolist()])))
-    format_fillers.append(SampEn([e[0] for e in dataDF.values.tolist()], 2, 0.2*np.std([e[0] for e in dataDF.values.tolist()])))
+    format_fillers.append(ApproximateEntropry([e[0] for e in dataDF.values.tolist()], 2, 0.2*np.std([e[0] for e in dataDF.values.tolist()])))
+    format_fillers.append(SampleEntropy([e[0] for e in dataDF.values.tolist()], 2, 0.2*np.std([e[0] for e in dataDF.values.tolist()])))
 
     return format_fillers
 
 ## Statistical Tests
-def check_stationarity(_df, signif_val = 0.05):
+def adf_test(_df, signif_val = 0.05):
     if _df.shape[0] < 5000:
         
         _series= pd.Series(_df.values.flatten(), index=_df.index).dropna()
@@ -184,44 +185,23 @@ def kpss_test(_df):
         return False, result[1]
     else:
         return True, result[1]
+
+
+def get_datasummary(data):
+    data = data.copy()
+    # Get the DTypes
+    total_cols = data.shape[1]
+    total_rows = data.shape[0]
+    dtype_dict = {'category':0, 'int': 0, 'float' : 0}
+    for k,v in data.dtypes.to_dict().items():
+        if 'float' in v.__str__():
+            dtype_dict['float'] += 1
+        if 'category' in v.__str__():
+            dtype_dict['category'] += 1
+        if 'int' in v.__str__():
+            dtype_dict['int'] += 1
+
+    # Get NaN dict
+    nan_dict = data.isna().sum().to_dict()    
     
-def ApEn(U, m, r):
-    try:
-        def _maxdist(x_i, x_j):
-            return max([abs(ua - va) for ua, va in zip(x_i, x_j)])
-
-        def _phi(m):
-            x = [[U[j] for j in range(i, i + m - 1 + 1)]
-                    for i in range(N - m + 1)]
-            C = [len([1 for x_j in x if _maxdist(x_i, x_j) <= r]) /
-                    (N - m + 1.0) for x_i in x]
-            return (N - m + 1.0)**(-1) * sum(np.log(C))
-        N = len(U)
-        if N < 200:
-            
-            return abs(_phi(m+1) - _phi(m))
-        else:
-            return '--'
-    except:
-        return '--'
-
-def SampEn(U, m, r):
-    try:
-        def _maxdist(x_i, x_j):
-            return max([abs(ua - va) for ua, va in zip(x_i, x_j)])
-
-        def _phi(m):
-            x = [[U[j] for j in range(i, i + m - 1 + 1)]
-                    for i in range(N - m + 1)]
-            C = [len([1 for j in range(len(x)) if i != j and _maxdist(
-                x[i], x[j]) <= r]) for i in range(len(x))]
-            return sum(C)
-        
-        N = len(U)
-        if N < 200:
-            
-            return -np.log(_phi(m+1) / _phi(m))
-        else:
-            return '--'
-    except:
-        return '--'
+    return dtype_dict, nan_dict, total_cols, total_rows
