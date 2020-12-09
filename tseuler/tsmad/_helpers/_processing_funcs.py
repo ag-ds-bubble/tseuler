@@ -1,6 +1,7 @@
 from ..._utils import get_valhexrg, get_valhex11rg
 from ...tsstats import ApproximateEntropry, SampleEntropy
 from .._helpers import TS_FREQ_MAP, TS_FREQUENCIES, TSMAD_CONFIGS
+from ..._utils import format_with_suffix
 
 import re
 from statsmodels.tsa.seasonal import seasonal_decompose
@@ -111,8 +112,8 @@ def get_unifillers(dataDF):
     _negpct = _negcounts/_count
     _negcolor = get_valhexrg(_negpct)
     format_fillers+=[_negcolor, _negcounts, round(_negpct*100, 2)]
-    format_fillers+=[round(_count, 3), round(_mean, 3), round(_std, 3), round(_min, 3),
-                     round(_pct25, 3), round(_pct50, 3), round(_pct75, 3), round(_max, 3)]
+    format_fillers+=[format_with_suffix(_count), format_with_suffix(_mean), format_with_suffix(_std), format_with_suffix(_min),
+                     format_with_suffix(_pct25), format_with_suffix(_pct50), format_with_suffix(_pct75), format_with_suffix(_max)]
     # ADF
     adfStationarity, adfStationarityPVal = adf_test(dataDF)
     # KPSS
@@ -151,6 +152,7 @@ def kpss_test(_df):
 
 # S3_Slab Functions
 # ==========================
+# TODO : Based on freq, decide freq of the decompose
 def get_transformed_data(data, transformation, lag):
     transformed_data = data.shift(lag)
     err = None

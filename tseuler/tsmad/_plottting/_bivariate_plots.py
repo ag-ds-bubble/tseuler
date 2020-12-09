@@ -3,6 +3,7 @@ import seaborn as sns
 import altair as alt
 import panel as pn
 import pandas as pd
+import numpy as np
 
 plt.style.use('ggplot')
 alt.data_transformers.disable_max_rows()
@@ -85,10 +86,13 @@ def bv_linePlot(data, engine, xlabel, ylabel1, ylabel2):
         # Values
         _ymean_uu1 = data[ylabel1].max()
         _ymean1 = data[ylabel1].mean()
-        _ystd_uu1 = data[ylabel1].std()*1.5
+        # Inspired from :- https://stats.stackexchange.com/a/350278
+        _maxvar_in_slice1 = ((data[ylabel1].max()-data[ylabel1].min())/2)**2
+        _ystd_uu1 = np.sqrt(_maxvar_in_slice1)
         _ystd1 = data[ylabel1].std()
-        _yvar_uu1 = data[ylabel1].var()*1.5
+        _yvar_uu1 = _maxvar_in_slice1
         _yvar1 = data[ylabel1].var()
+
         # Stat Bar Base
         stats_barbase1 = base_stat1.mark_bar(color='#3d84ba')
         stats_barbase1 = stats_barbase1.properties(width = 188, height = 20)
@@ -120,10 +124,13 @@ def bv_linePlot(data, engine, xlabel, ylabel1, ylabel2):
         # Values
         _ymean_uu2 = data[ylabel2].max()
         _ymean2 = data[ylabel2].mean()
-        _ystd_uu2 = data[ylabel2].std()*1.5
+        # Inspired from :- https://stats.stackexchange.com/a/350278
+        _maxvar_in_slice2 = ((data[ylabel2].max()-data[ylabel2].min())/2)**2
+        _ystd_uu2 = np.sqrt(_maxvar_in_slice2)
         _ystd2 = data[ylabel2].std()
-        _yvar_uu2 = data[ylabel2].var()*1.5
+        _yvar_uu2 = _maxvar_in_slice2
         _yvar2 = data[ylabel2].var()
+
         # Stat Bar Base
         stats_barbase2 = base_stat2.mark_bar(color='#f57542')
         stats_barbase2 = stats_barbase2.properties(width = 188, height = 20)
@@ -201,7 +208,7 @@ def bv_areaPlot(data, engine, xlabel, ylabel1, ylabel2):
                                         y1=1, y2=0
                                     ))
         upper1 = upper1.encode(x = alt.X('{0}:T'.format(data.index.name), scale=alt.Scale(domain=brush), title=''),
-                            y = alt.Y('{0}:Q'.format(ylabel1), scale=alt.Scale(zero=False), axis=alt.Axis(format='~s')))
+                               y = alt.Y('{0}:Q'.format(ylabel1), scale=alt.Scale(zero=False), axis=alt.Axis(format='~s')))
         upper2 = base.mark_area(line={'color':'#f57542'},
                                     color=alt.Gradient(
                                         gradient='linear',
@@ -256,9 +263,11 @@ def bv_areaPlot(data, engine, xlabel, ylabel1, ylabel2):
         # Values
         _ymean_uu1 = data[ylabel1].max()
         _ymean1 = data[ylabel1].mean()
-        _ystd_uu1 = data[ylabel1].std()*1.5
+        # Inspired from :- https://stats.stackexchange.com/a/350278
+        _maxvar_in_slice1 = ((data[ylabel1].max()-data[ylabel1].min())/2)**2
+        _ystd_uu1 = np.sqrt(_maxvar_in_slice1)
         _ystd1 = data[ylabel1].std()
-        _yvar_uu1 = data[ylabel1].var()*1.5
+        _yvar_uu1 = _maxvar_in_slice1
         _yvar1 = data[ylabel1].var()
         # Stat Bar Base
         stats_barbase1 = base_stat1.mark_bar(color='#3d84ba')
@@ -292,9 +301,11 @@ def bv_areaPlot(data, engine, xlabel, ylabel1, ylabel2):
         # Values
         _ymean_uu2 = data[ylabel2].max()
         _ymean2 = data[ylabel2].mean()
-        _ystd_uu2 = data[ylabel2].std()*1.5
+        # Inspired from :- https://stats.stackexchange.com/a/350278
+        _maxvar_in_slice2 = ((data[ylabel2].max()-data[ylabel2].min())/2)**2
+        _ystd_uu2 = np.sqrt(_maxvar_in_slice2)
         _ystd2 = data[ylabel2].std()
-        _yvar_uu2 = data[ylabel2].var()*1.5
+        _yvar_uu2 = _maxvar_in_slice2
         _yvar2 = data[ylabel2].var()
         # Stat Bar Base
         stats_barbase2 = base_stat2.mark_bar(color='#f57542')
@@ -323,7 +334,6 @@ def bv_areaPlot(data, engine, xlabel, ylabel1, ylabel2):
         totvar_line2 = totvar_line2.mark_rule(color='red', size=5)
         totvar_line2 = totvar_line2.encode(x='x')
         var_bar2 += totvar_line2
-
 
         # Concatenated
         # p = alt.vconcat(upper+label_stat, mean_bar|std_bar|var_bar, lower).configure_concat(spacing=2)

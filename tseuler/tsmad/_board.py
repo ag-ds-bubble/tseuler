@@ -87,7 +87,6 @@ class TSMAD:
         # Checks for tsdata
         if tsdata.empty:
             raise ValueError(f"'tsdata' should not be an empty DataFrame")
-        
         if type(tsdata.index)==pd.core.indexes.datetimes.DatetimeIndex:
             pass
         elif type(tsdata.index)==pd.core.indexes.base.Index:
@@ -99,7 +98,9 @@ class TSMAD:
                 tsdata.index = pd.to_datetime(tsdata.index, format=dt_format)
         else:
             raise ValueError(f"`tsdata` index should be eitherof type pandas.DatetimeIndex or Index.")
-
+        # Check for target columns
+        if target_columns == []:
+            raise ValueError(f"`target_columns` parameter can not be an empty list")
         if not set(target_columns).issubset(set(tsdata.columns.tolist())):
             raise ValueError(f"{target_columns} not present in the 'tsdata'")
         # Sanity check for categorical columns
@@ -114,7 +115,6 @@ class TSMAD:
         self.plot_cols = [e for e in tsdata.columns if any(a in tsdata[e].dtype.__str__() for a in  ['int', 'float'])]
         self.dropped_cols = [e for e in tsdata.columns if e not in self.usable_cols]
         tsdata = tsdata[self.usable_cols]
-
         # If there is no 'int' or 'float' category column left, raise error
         _intcols = 0
         _floatcols = 0
@@ -125,7 +125,6 @@ class TSMAD:
                 _floatcols += 1
         if not any([_floatcols>0, _intcols>0]):
             raise ValueError(f"`tsdata` has no `int` or `float` cloumns left to plot")
-
         # Sanity check for how_aggregate
         if isinstance(how_aggregate, str):
             if how_aggregate not in AVAILABLE_AGG_FUNC:

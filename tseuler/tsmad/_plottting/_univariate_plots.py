@@ -63,17 +63,19 @@ def uv_linePlot(data, engine, xlabel, ylabel):
                                                   Var='variance({0})'.format(ylabel))
         # Label Statistics
         label_stat = base_stat.transform_calculate(
-            stat_label="'Mean = ' + format(datum.Mean, '.1f') + \
-            '; Standard Deviation = ' + format(datum.StdDev, '.1f') +\
-            '; Variance = ' + format(datum.Var, '.1f')")
+            stat_label="'Mean = ' + format(datum.Mean, '~s') + \
+            '; Standard Deviation = ' + format(datum.StdDev, '~s') +\
+            '; Variance = ' + format(datum.Var, '~s')")
         label_stat = label_stat.mark_text(align='left', baseline='bottom')
         label_stat = label_stat.encode(x=alt.value(0.0), y=alt.value(12.0), text=alt.Text('stat_label:N'))
         # Values
         _ymean_uu = data[ylabel].max()
         _ymean = data[ylabel].mean()
-        _ystd_uu = data[ylabel].std()*1.5
+        # Inspired from :- https://stats.stackexchange.com/a/350278
+        _maxvar_in_slice = ((data[ylabel].max()-data[ylabel].min())/2)**2
+        _ystd_uu = np.sqrt(_maxvar_in_slice)
         _ystd = data[ylabel].std()
-        _yvar_uu = data[ylabel].var()*1.5
+        _yvar_uu = _maxvar_in_slice
         _yvar = data[ylabel].var()
         # Stat Bar Base
         stats_barbase = base_stat.mark_bar()
@@ -172,17 +174,19 @@ def uv_areaPlot(data, engine, xlabel, ylabel):
                                                 Var='variance({0})'.format(ylabel))
         # Label Statistics
         label_stat = base_stat.transform_calculate(
-            stat_label="'Mean = ' + format(datum.Mean, '.1f') + \
-            '; Standard Deviation = ' + format(datum.StdDev, '.1f') +\
-            '; Variance = ' + format(datum.Var, '.1f')")
+            stat_label="'Mean = ' + format(datum.Mean, '~s') + \
+            '; Standard Deviation = ' + format(datum.StdDev, '~s') +\
+            '; Variance = ' + format(datum.Var, '~s')")
         label_stat = label_stat.mark_text(align='left', baseline='bottom')
         label_stat = label_stat.encode(x=alt.value(0.0), y=alt.value(12.0), text=alt.Text('stat_label:N'))
         # Values
         _ymean_uu = data[ylabel].max()
         _ymean = data[ylabel].mean()
-        _ystd_uu = data[ylabel].std()*1.5
+        # Inspired from :- https://stats.stackexchange.com/a/350278
+        _maxvar_in_slice = ((data[ylabel].max()-data[ylabel].min())/2)**2
+        _ystd_uu = np.sqrt(_maxvar_in_slice)
         _ystd = data[ylabel].std()
-        _yvar_uu = data[ylabel].var()*1.5
+        _yvar_uu = _maxvar_in_slice
         _yvar = data[ylabel].var()
         # Stat Bar Base
         stats_barbase = base_stat.mark_bar()
