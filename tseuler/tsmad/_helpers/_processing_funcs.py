@@ -1,101 +1,34 @@
 from ..._utils import get_valhexrg, get_valhex11rg
 from ...tsstats import ApproximateEntropry, SampleEntropy
+from .._helpers import TS_FREQ_MAP, TS_FREQUENCIES, TSMAD_CONFIGS
 
+import re
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import adfuller, kpss
 import pandas as pd
 import numpy as np
-
 from warnings import filterwarnings
 filterwarnings('ignore')
 
-#FIXME : Need to handle the Frequency Aggregations slots - UV-Seasonal
-def get_transformed_data(data, transformation, lag, dtfreq, anfreq):
-    dt_idxname = data.index.name
-    afreq_dates = data.index.to_frame()
-    transformed_data = data.shift(lag)
-    err = None
-    print('freq', anfreq)
-    print(data.asfreq('2'+anfreq))
 
-    try:
-        if transformation == 'AS':
-            transformed_data = seasonal_decompose(transformed_data.dropna(), freq=12, model = 'additive', extrapolate_trend=0).seasonal        
-        elif transformation == 'AT':
-            transformed_data = seasonal_decompose(transformed_data.dropna(), freq=12, model = 'additive', extrapolate_trend=0).trend
-        elif transformation == 'MS':
-            transformed_data = seasonal_decompose(transformed_data.dropna(), freq=12, model = 'multiplicative', extrapolate_trend=0).seasonal
-        elif transformation == 'MT':
-            transformed_data = seasonal_decompose(transformed_data.dropna(), freq=12, model = 'multiplicative', extrapolate_trend=0).trend
-    except Exception as e:
-        err = e
+def get_datasummary(data):
+    data = data.copy()
+    # Get the DTypes
+    total_cols = data.shape[1]
+    total_rows = data.shape[0]
+    dtype_dict = {'category':0, 'int': 0, 'float' : 0}
+    for k,v in data.dtypes.to_dict().items():
+        if 'float' in v.__str__():
+            dtype_dict['float'] += 1
+        if 'category' in v.__str__():
+            dtype_dict['category'] += 1
+        if 'int' in v.__str__():
+            dtype_dict['int'] += 1
 
-
-#  [r'S', r'T', r'H',
-# r'\d+S$', r'\d+T$', r'\d+H$',
-
-# r'D', r'B',
-# r'\d+D$', r'\d+B$',
-
-# r'MS', r'M',
-# r'\d+MS$', r'\d+M$',
-
-# r'W-MON',r'W-TUE',r'W-WED',r'W-THU',r'W-FRI',r'W-SAT',r'W-SUN',
-# r'\d+W-MON$',r'\d+W-TUE$',r'\d+W-WED$',r'\d+W-THU$',r'\d+W-FRI$',r'\d+W-SAT$',r'\d+W-SUN$',
-
-# r'QS-JAN', r'QS-FEB', r'QS-MAR', r'QS-APR', r'QS-MAY', r'QS-JUN', r'QS-JUL', r'QS-AUG', r'QS-SEP', r'QS-OCT', r'QS-NOV', r'QS-DEC',
-# r'\d+QS-JAN$', r'\d+QS-FEB$', r'\d+QS-MAR$', r'\d+QS-APR$', r'\d+QS-MAY$', r'\d+QS-JUN$', r'\d+QS-JUL$', r'\d+QS-AUG$', r'\d+QS-SEP$', r'\d+QS-OCT$', r'\d+QS-NOV$', r'\d+QS-DEC$',
-
-# r'Q-JAN', r'Q-FEB', r'Q-MAR', r'Q-APR', r'Q-MAY', r'Q-JUN', r'Q-JUL', r'Q-AUG', r'Q-SEP', r'Q-OCT', r'Q-NOV', r'Q-DEC',
-# r'\d+Q-JAN$', r'\d+Q-FEB$', r'\d+Q-MAR$', r'\d+Q-APR$', r'\d+Q-MAY$', r'\d+Q-JUN$', r'\d+Q-JUL$', r'\d+Q-AUG$', r'\d+Q-SEP$', r'\d+Q-OCT$', r'\d+Q-NOV$', r'\d+Q-DEC$',
-
-# r'AS-JAN', r'AS-FEB', r'AS-MAR', r'AS-APR', r'AS-MAY', r'AS-JUN', r'AS-JUL', r'AS-AUG', r'AS-SEP', r'AS-OCT', r'AS-NOV', r'AS-DEC',
-# r'\d+AS-JAN$', r'\d+AS-FEB$', r'\d+AS-MAR$', r'\d+AS-APR$', r'\d+AS-MAY$', r'\d+AS-JUN$', r'\d+AS-JUL$', r'\d+AS-AUG$', r'\d+AS-SEP$', r'\d+AS-OCT$', r'\d+AS-NOV$', r'\d+AS-DEC$',
-
-# r'A-JAN', r'A-FEB', r'A-MAR', r'A-APR', r'A-MAY', r'A-JUN', r'A-JUL', r'A-AUG', r'A-SEP', r'A-OCT', r'A-NOV', r'A-DEC',
-# r'\d+A-JAN$', r'\d+A-FEB$', r'\d+A-MAR$', r'\d+A-APR$', r'\d+A-MAY$', r'\d+A-JUN$', r'\d+A-JUL$', r'\d+A-AUG$', r'\d+A-SEP$', r'\d+A-OCT$', r'\d+A-NOV$', r'\d+A-DEC$']
-
-
-    # Analysis Frequency Generation
-    if anfreq == 'Weeks':
-        # 'W'
-        afreq_dates['anfreq'] = afreq_dates[dt_idxname].dt.to_period("W").dt.start_time.astype('datetime64[D]')
-        afreq_dates['anfreq_label'] = afreq_dates[dt_idxname].apply(lambda x:'W'+str(x.week).zfill(2))
-        afreq_dates['anfreq_label1'] = afreq_dates[dt_idxname].dt.day_name()
-    elif anfreq == 'Month Start':
-        # 'MS'
-        afreq_dates['anfreq'] = afreq_dates[dt_idxname].dt.to_period("M").dt.start_time.astype('datetime64[D]')
-        afreq_dates['anfreq_label'] = afreq_dates['anfreq'].dt.month_name()
-        afreq_dates['anfreq_label1'] = afreq_dates[dt_idxname].dt.day
-    elif anfreq == 'Month End':
-        # 'M'
-        afreq_dates['anfreq'] = afreq_dates[dt_idxname].dt.to_period("M").dt.end_time.astype('datetime64[D]')
-        afreq_dates['anfreq_label'] = afreq_dates['anfreq'].dt.month_name()
-        afreq_dates['anfreq_label1'] = afreq_dates[dt_idxname].dt.day
-    elif anfreq == 'Quarter Start':
-        # 'QS'
-        afreq_dates['anfreq'] = afreq_dates[dt_idxname].dt.to_period("Q").dt.start_time.astype('datetime64[D]')
-        afreq_dates['anfreq_label'] = pd.to_datetime(afreq_dates[dt_idxname]).dt.to_period('Q-MAR').astype(str).str[4:]
-        afreq_dates['anfreq_label1'] = (afreq_dates[dt_idxname] - pd.PeriodIndex(afreq_dates[dt_idxname],freq='Q').start_time).dt.days + 1
-    elif anfreq == 'Quarter End':
-        # 'Q'
-        afreq_dates['anfreq'] = afreq_dates[dt_idxname].dt.to_period("Q").dt.end_time.astype('datetime64[D]')
-        afreq_dates['anfreq_label'] = pd.to_datetime(afreq_dates[dt_idxname]).dt.to_period('Q-MAR').astype(str).str[4:]
-        afreq_dates['anfreq_label1'] = (afreq_dates[dt_idxname] - pd.PeriodIndex(afreq_dates[dt_idxname],freq='Q').start_time).dt.days + 1
-    elif anfreq == 'Year Start':
-        # 'AS'
-        afreq_dates['anfreq'] = afreq_dates[dt_idxname].dt.to_period("A").dt.start_time.astype('datetime64[D]')
-        afreq_dates['anfreq_label'] = afreq_dates[dt_idxname].dt.year
-        afreq_dates['anfreq_label1'] = afreq_dates[dt_idxname].dt.dayofyear
-    elif anfreq == 'Year End':
-        # 'A'
-        afreq_dates['anfreq'] = afreq_dates[dt_idxname].dt.to_period("A").dt.end_time.astype('datetime64[D]')
-        afreq_dates['anfreq_label'] = afreq_dates[dt_idxname].dt.year
-        afreq_dates['anfreq_label1'] = afreq_dates[dt_idxname].dt.month_name()
-
-    afreq_dates['hue_col'] = afreq_dates[dt_idxname].dt.to_period("A").dt.start_time.astype('datetime64[D]').dt.year
-
-    return transformed_data, afreq_dates['anfreq'], afreq_dates['anfreq_label'], afreq_dates['anfreq_label1'], afreq_dates['hue_col'], err
+    # Get NaN dict
+    nan_dict = data.isna().sum().to_dict()    
+    
+    return dtype_dict, nan_dict, total_cols, total_rows
 
 def prep_statmetric(data, variate):
     
@@ -113,6 +46,7 @@ def prep_statmetric(data, variate):
         return _fillers
 
 def get_corrfillers(dataDF, variate):
+    _corr_method = TSMAD_CONFIGS['stat.corr_type']
     dataDF = dataDF.dropna().copy()
     corrlist = []
     dataDF.rename(columns = {'plotY':'Y', 'plotX1':'X1', 'plotX2' : 'X2'}, inplace=True)
@@ -135,11 +69,11 @@ def get_corrfillers(dataDF, variate):
             dataDF[ecol+'-MT'] = np.nan
 
     if any('X1' in k for k in dataDF.columns):
-        dataDF = dataDF.corr()
+        dataDF = dataDF.corr(method=_corr_method)
         dataDF = dataDF[['Y', 'Y-AS', 'Y-AT', 'Y-MS', 'Y-MT']]
         dataDF = dataDF.loc[['X1', 'X1-AS', 'X1-AT', 'X1-MS', 'X1-MT'], :]
     elif any('X2' in k for k in dataDF.columns):
-        dataDF = dataDF.corr()
+        dataDF = dataDF.corr(method=_corr_method)
         dataDF = dataDF[['Y', 'Y-AS', 'Y-AT', 'Y-MS', 'Y-MT']]
         dataDF = dataDF.loc[['X2', 'X2-AS', 'X2-AT', 'X2-MS', 'X2-MT'], :]
     corrlist = []
@@ -215,21 +149,107 @@ def kpss_test(_df):
         return True, result[1]
 
 
-def get_datasummary(data):
-    data = data.copy()
-    # Get the DTypes
-    total_cols = data.shape[1]
-    total_rows = data.shape[0]
-    dtype_dict = {'category':0, 'int': 0, 'float' : 0}
-    for k,v in data.dtypes.to_dict().items():
-        if 'float' in v.__str__():
-            dtype_dict['float'] += 1
-        if 'category' in v.__str__():
-            dtype_dict['category'] += 1
-        if 'int' in v.__str__():
-            dtype_dict['int'] += 1
+# S3_Slab Functions
+# ==========================
+def get_transformed_data(data, transformation, lag):
+    transformed_data = data.shift(lag)
+    err = None
+    # Handle Transformations
+    try:
+        if transformation == 'AS':
+            transformed_data = seasonal_decompose(transformed_data.dropna(), freq=12, model = 'additive', extrapolate_trend=0).seasonal        
+        elif transformation == 'AT':
+            transformed_data = seasonal_decompose(transformed_data.dropna(), freq=12, model = 'additive', extrapolate_trend=0).trend
+        elif transformation == 'MS':
+            transformed_data = seasonal_decompose(transformed_data.dropna(), freq=12, model = 'multiplicative', extrapolate_trend=0).seasonal
+        elif transformation == 'MT':
+            transformed_data = seasonal_decompose(transformed_data.dropna(), freq=12, model = 'multiplicative', extrapolate_trend=0).trend
+    except Exception as e:
+        err = e
 
-    # Get NaN dict
-    nan_dict = data.isna().sum().to_dict()    
-    
-    return dtype_dict, nan_dict, total_cols, total_rows
+    return transformed_data, err
+
+# TODO : Fix for those frequencies at/after which the dataframe becomes empty...
+def get_available_frequencies(data, datafreq, freq_group, how_aggregate):
+
+    available_freqs = []
+    available_max = []
+    err = None
+
+    _mult = re.search(r'\d+', datafreq)
+    if _mult:
+        available_max.append(int(_mult.group()))
+        available_freqs.append(datafreq.replace(_mult.group(), ''))
+    else:
+        available_max.append(1)
+        available_freqs.append(datafreq)
+    for econvfreq in TS_FREQ_MAP[freq_group]:
+        _tempresample = data.resample(econvfreq, label='right').agg(how_aggregate).dropna()
+        if not _tempresample.empty:
+            available_freqs.append(econvfreq)
+            available_max.append(5)
+
+    return np.array(available_freqs), np.array(available_max)
+
+def get_aggregated_data(data, anfreq, howagg):
+    # As the frequency is changed, the data needs to be aggregated
+    data = data.copy()
+    data = data.resample(anfreq, label='right').agg(howagg)
+    return data
+
+#TODO:Fix `anfreq_label1` is purely for the benefit of UV-Seasonal Plot
+def add_anfreq(plot_data, afreq_group):
+    dt_idxname = plot_data.index.name
+    data_dates = plot_data.index.to_frame().copy()
+    err = None
+    # Analysis Frequency Generation
+    if afreq_group == 'W':
+        # 'W'
+        plot_data['anfreq'] = data_dates[dt_idxname].dt.to_period("W").dt.start_time.astype('datetime64[D]')
+        plot_data['anfreq_label'] = data_dates[dt_idxname].apply(lambda x:'W'+str(x.week).zfill(2))
+        plot_data['anfreq_label1'] = data_dates[dt_idxname].dt.day_name()
+    elif afreq_group == 'MS':
+        # 'MS'
+        plot_data['anfreq'] = data_dates[dt_idxname].dt.to_period("M").dt.start_time.astype('datetime64[D]')
+        plot_data['anfreq_label'] = plot_data['anfreq'].dt.month_name()
+        plot_data['anfreq_label1'] = data_dates[dt_idxname].dt.day
+    elif afreq_group == 'M':
+        # 'M'
+        plot_data['anfreq'] = data_dates[dt_idxname].dt.to_period("M").dt.end_time.astype('datetime64[D]')
+        plot_data['anfreq_label'] = plot_data['anfreq'].dt.month_name()
+        plot_data['anfreq_label1'] = data_dates[dt_idxname].dt.day
+    elif afreq_group == 'QS':
+        # 'QS'
+        plot_data['anfreq'] = data_dates[dt_idxname].dt.to_period("Q").dt.start_time.astype('datetime64[D]')
+        plot_data['anfreq_label'] = data_dates[dt_idxname].dt.to_period('Q').astype(str).str[4:]
+        plot_data['anfreq_label1'] = (plot_data.index - pd.PeriodIndex(plot_data.index,freq='Q').start_time).days + 1
+    elif afreq_group == 'Q':
+        # 'Q'
+        plot_data['anfreq'] = data_dates[dt_idxname].dt.to_period("Q").dt.end_time.astype('datetime64[D]')
+        plot_data['anfreq_label'] = data_dates[dt_idxname].dt.to_period('Q').astype(str).str[4:]
+        plot_data['anfreq_label1'] = (plot_data.index - pd.PeriodIndex(plot_data.index,freq='Q').start_time).days + 1
+    elif afreq_group == 'AS':
+        # 'AS'
+        plot_data['anfreq'] = data_dates[dt_idxname].dt.to_period("A").dt.start_time.astype('datetime64[D]')
+        plot_data['anfreq_label'] = data_dates[dt_idxname].dt.year
+        plot_data['anfreq_label1'] = data_dates[dt_idxname].dt.dayofyear
+    elif afreq_group == 'A':
+        # 'A'
+        plot_data['anfreq'] = data_dates[dt_idxname].dt.to_period("A").dt.end_time.astype('datetime64[D]')
+        plot_data['anfreq_label'] = data_dates[dt_idxname].dt.year
+        plot_data['anfreq_label1'] = data_dates[dt_idxname].dt.month_name()
+
+    plot_data['hue_col'] = data_dates[dt_idxname].dt.to_period("A").dt.start_time.astype('datetime64[D]').dt.year
+
+def get_freqgroup(_freqlabel):
+    freq_group = _freqlabel
+    for eftype in TS_FREQUENCIES:
+        _match = re.compile(eftype).fullmatch(_freqlabel)
+        if _match:
+            # If it has multiplier
+            _mult = re.search('\d+', _freqlabel)
+            if _mult:
+                freq_group = freq_group.replace(_mult.group(), '')
+            # Split from -
+            freq_group = freq_group.split('-')[0]
+    return freq_group

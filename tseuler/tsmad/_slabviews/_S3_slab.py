@@ -5,7 +5,7 @@
 from .._helpers import TS_UV_PLOTS, TS_BV_PLOTS, TS_TV_PLOTS, TS_FREQUENCIES_DESC, TS_FREQ_MAP
 from .._helpers import TSMAD_CONFIGS
 from .._helpers import stats_css, corr_css, table_html_1, table_html_2
-from .._helpers import get_transformed_data, prep_statmetric
+from .._helpers import get_transformed_data, prep_statmetric, get_available_frequencies, get_freqgroup
 
 from .._plottting import get_plot
 
@@ -33,7 +33,8 @@ class PlottingPanel(param.Parameterized):
     # Plot Selector
     plot_variant = param.Selector(objects=['--'])
     # Frequency Slector
-    freq_variant = param.String()
+    freq_variant_mult = param.Integer(default=1, bounds=(1,5))
+    freq_variant = param.Selector(objects=['--'])
     # Plotting Data
     plotting_data = param.DataFrame()
     plotting_data_metrics = param.DataFrame()
@@ -53,9 +54,12 @@ class PlottingPanel(param.Parameterized):
         self.TS_BV_PLOTS = TS_BV_PLOTS
         self.TS_TV_PLOTS = TS_TV_PLOTS
         self.data_freq = data_freq
+        freq_group = get_freqgroup(data_freq)
+        # Get available frequencies for analysis
+        self._freqvariants, self._freqmults = get_available_frequencies(data = self.filtered_data, datafreq = self.data_freq,
+                                                                        freq_group = freq_group, how_aggregate = how_aggregate)
         self.how_aggregate = how_aggregate
         self.force_interactive = force_interactive
-
         self.vt_flag = False  # Variant Transition Flag   
 
 
@@ -136,22 +140,33 @@ class PlottingPanel(param.Parameterized):
                          self.slab_descPane, 
                          self._update_metric_table, width=300)
                          
-        # Init View & Data
-        self._uv_view()
-
         # S3L3 - Plot and Metric Table
-        dtfreq_html = pn.pane.HTML('<p style="font-size:1.2em;">Data Frequency : <b style="color:red;">{0}</b><br>\
+        dtfreq_html = pn.pane.HTML('<p style="font-size:1.0em;">Data Frequency : <b style="color:red;">{0}</b>\
             <i style="font-size:.6em; color:#8a8a8a">({1})</i></p> '.format(self.data_freq, TS_FREQUENCIES_DESC[self.data_freq]),
-             margin=(-5,5,5,-300))
-        self.freq_variantPanel = pn.panel(self.param.freq_variant,
-                                          widgets = {'freq_variant' : {'widget_type' : pn.widgets.TextInput,
-                                                                        'placeholder':'Frequency Variant',
-                                                                        'width' : 100,
-                                                                        'margin' : (-5,5,5,-100)}})
+             margin=(0,5,5,-280))
+        anfreq_html = pn.pane.HTML('<p style="font-size:1.0em;">Analysis Frequency : </p> ', margin=(40,5,5,-300))
         
-        S3L3 = pn.Row(self._update_plot_slab, dtfreq_html, self.freq_variantPanel, margin=(-490, 5,5, 5))
+        self.freq_variant_multPanel = pn.panel(self.param.freq_variant_mult,
+                                               widgets = {'freq_variant_mult' : {'widget_type' : pn.widgets.IntInput,
+                                                                                 'width' : 60,
+                                                                                 'name' : 'Multiplier',
+                                                                                 'margin' : (20, 5, 5, -170)}})
+        self.freq_variantPanel = pn.panel(self.param.freq_variant,
+                                          widgets = {'freq_variant' : {'widget_type' : pn.widgets.Select,
+                                                                       'width' : 100,
+                                                                       'name' : 'Variant',
+                                                                       'margin' : (20, 5, 5, -100)}})
+
+        self.param.freq_variant.objects = self._freqvariants
+        self.freq_variant = self._freqvariants[0]
+        self.freq_variant_mult = int(self._freqmults[0])
+
+        S3L3 = pn.Row(self._update_plot_slab, anfreq_html, dtfreq_html, self.freq_variant_multPanel, self.freq_variantPanel, margin=(-490, 5,5, 5)) #-490
         
         S3 = pn.Column(pn.Row(S3L1, S3L2), S3L3, margin=(5,5,-20,5))
+
+        # Init View & Data
+        self._uv_view()
 
         return S3
     
@@ -167,8 +182,6 @@ class PlottingPanel(param.Parameterized):
 
         self.param.x2_Select.objects = self.selectable_cols
         self.x2_Select = self.selectable_cols[0]
-
-        self.freq_variantPanel = self.data_freq
 
         self.y_selectPanel.disabled = True
         self.y_lagPanel.disabled = True
@@ -189,7 +202,7 @@ class PlottingPanel(param.Parameterized):
         self.x2_Transformation = 'Actual'
 
         # Add ohlc plot if data has open, close, high, low and volume
-        if all(k in self.filter_obj.get_filtereddata().columns for k in ['open', 'high', 'low', 'close', 'volume']):
+        if all(k in [ecol.lower() for ecol in self.filter_obj.get_filtereddata().columns] for k in ['open', 'high', 'low', 'close', 'volume']):
             self.TS_UV_PLOTS += ['CandleStick Chart : Financial Analysis']
         self.param.plot_variant.objects = self.TS_UV_PLOTS
         self.plot_variant = self.TS_UV_PLOTS[0]
@@ -285,24 +298,22 @@ class PlottingPanel(param.Parameterized):
         elif self.analysis_variant == 'TV':
             self._tv_view()
 
-
     @param.depends('y_Select','y_Lags','y_Transformation',
                    'x1_Select','x1_Lags','x1_Transformation',
-                   'x2_Select','x2_Lags','x2_Transformation','freq_variant', watch=True)
+                   'x2_Select','x2_Lags','x2_Transformation', watch=True)
     def _update_plotting_data(self):
+        
         # Filter the plotting data
         self.filtered_data = self.filter_obj.get_filtereddata()
+
         # Prepare Plotting Data
         if all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'UV' and self.vt_flag and self.freq_variantPanel!=None:
             tempDF= pd.DataFrame(index=self.filtered_data.index)
             tempDF['X1'] = self.filtered_data[self.x1_Select].copy()
-            print(self.freq_variantPanel, '+', self.freq_variant)
             respacket = get_transformed_data(tempDF.X1,
                                             self.x1_Transformation,
-                                            self.x1_Lags,
-                                            self.data_freq,
-                                            self.freq_variantPanel)
-            tempDF['plotX1'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
+                                            self.x1_Lags)
+            tempDF['plotX1'], tarnsformERR = respacket
             if tarnsformERR: self.y_trnsrmPanel.value = 'Actual'
             self.plotting_data = tempDF.copy()
             
@@ -323,20 +334,14 @@ class PlottingPanel(param.Parameterized):
                 
                 respacket = get_transformed_data(tempDF.Y,
                                                 self.y_Transformation,
-                                                self.y_Lags,
-                                                self.data_freq,
-                                                self.freq_variantPanel)
-                tempDF['plotY'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
+                                                self.y_Lags)
+                tempDF['plotY'], tarnsformERR = respacket
                 if tarnsformERR: 
                     self.y_trnsrmPanel.value = 'Actual'
-                    # self.err_dispPanel = pn.panel('<marquee style="color:white; background-color:#660404;">{0}</marquee>'.format(tarnsformERR), width = 660)
-
                 respacket = get_transformed_data(tempDF.X1,
                                                 self.x1_Transformation,
-                                                self.x1_Lags,
-                                                self.data_freq,
-                                                self.freq_variantPanel)
-                tempDF['plotX1'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
+                                                self.x1_Lags)
+                tempDF['plotX1'], tarnsformERR = respacket
                 if tarnsformERR:
                     self.x1_trnsrmPanel.value = 'Actual'
 
@@ -361,64 +366,75 @@ class PlottingPanel(param.Parameterized):
                 
                 respacket = get_transformed_data(tempDF.Y,
                                                  self.y_Transformation,
-                                                 self.y_Lags,
-                                                 self.data_freq,
-                                                 self.freq_variant)
-                tempDF['plotY'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
+                                                 self.y_Lags)
+                tempDF['plotY'], tarnsformERR = respacket
                 if tarnsformERR: 
                     self.y_trnsrmPanel.value = 'Actual'
 
                 respacket = get_transformed_data(tempDF.X1,
                                                  self.x1_Transformation,
-                                                 self.x1_Lags,
-                                                 self.data_freq,
-                                                 self.freq_variant)
-                tempDF['plotX1'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
+                                                 self.x1_Lags)
+                tempDF['plotX1'], tarnsformERR = respacket
                 if tarnsformERR: 
                     self.x1_trnsrmPanel.value = 'Actual'
 
                 respacket = get_transformed_data(tempDF.X2,
                                                  self.x2_Transformation,
-                                                 self.x2_Lags,
-                                                 self.data_freq,
-                                                 self.freq_variant)
-                tempDF['plotX2'],  tempDF['anfreq'], tempDF['anfreq_label'], tempDF['anfreq_label1'], tempDF['hue_col'], tarnsformERR = respacket
+                                                 self.x2_Lags)
+                tempDF['plotX2'], tarnsformERR = respacket
                 if tarnsformERR: 
                     self.x2_trnsrmPanel.value = 'Actual'
 
                 self.plotting_data = tempDF.copy()
 
 
-    @param.depends('plotting_data', 'plot_variant', watch=False)
+    @param.depends('plotting_data', 'plot_variant', 'freq_variant', 'freq_variant_mult', watch=False)
     def _update_plot_slab(self):
+        # Checks for plotting data
         if not hasattr(self.plotting_data, 'empty'):
             return None
+        # Checks for frequency & mult(>=1 & <= _mult)
+        analysis_frequency = self.data_freq
+        if self.freq_variant==self._freqvariants[0] and int(self.freq_variant_mult)!=int(self._freqmults[0]):
+            self.freq_variant_multPanel.value = int(self._freqmults[0])
+            self.freq_variant_mult = int(self._freqmults[0])
+            # ERROR : Wrong Freqeuncy Multiplier
+            # Update marequee string
+
         # Get Plot based on the plotting data
         if (not self.plotting_data.empty):
             # Only Update 'plotting_data_metrics' if columns is in concurrence with the analysis variant
             check1 = self.analysis_variant == 'UV' and all(k in self.plotting_data.columns for k in ['plotX1'])
             check2 = self.analysis_variant == 'BV' and all(k in self.plotting_data.columns for k in ['plotX1', 'plotY'])
             check3 = self.analysis_variant == 'TV' and all(k in self.plotting_data.columns for k in ['plotX1', 'plotY', 'plotX2'])
+            
             if check1 or check2 or check3:
                 self.plotting_data_metrics = pd.DataFrame(prep_statmetric(self.plotting_data, self.analysis_variant))
                 # Return the Plot
                 self.plot_namePane = pn.pane.HTML(f'''<p style="font-size:2.4em; color:#8a8a8a">{self.analysis_variant} : {self.plot_variant.split(':')[0].strip()}</p>
                                                     <p style="font-size:.6em; color:#8a8a8a"><i>*NOTE:By Default plots are interactive, but
                                                     if the datapoints exceed 2500 plot switch to static</i></p>''', margin= (-5,5,5,5))
-                self.plot_filterPanel = pn.pane.HTML(f'''<p style="font-size:0.9em; color:#4a4a4a">{self.filter_obj.get_current_filter_depth()}</p>''', margin= (-5,5,5,5))
+                self.plot_filterPanel = pn.pane.HTML(f'''<p style="font-size:0.9em; color:#4a4a4a">Cat.Filter : {self.filter_obj.get_current_filter_depth()}</p>''', margin= (-5,5,5,5))
+
+
+                analysis_frequency = str(self.freq_variant_mult)+str(self.freq_variant)
+                afreq_group = get_freqgroup(analysis_frequency)
+                
                 if self.plot_variant == 'CandleStick Chart : Financial Analysis':
                     _plt = get_plot(plot_data = self.filtered_data,
                                     variate_type = self.analysis_variant,
                                     plot_name = self.plot_variant,
-                                    freq_variant = self.freq_variant,
-                                    how_aggregate = self.how_aggregate,
+                                    analysis_freq = analysis_frequency,
+                                    how_aggregate = {'open':'first', 'high':'max', 'low':'min', 'close':'last', 'volume':'sum'},
+                                    afreq_group = afreq_group,
                                     force_interactive = self.force_interactive)
-                else:                    
+                else:
                     _plt = get_plot(plot_data = self.plotting_data,
                                     variate_type = self.analysis_variant,
                                     plot_name = self.plot_variant,
-                                    freq_variant = self.freq_variant,
+                                    analysis_freq = analysis_frequency,
                                     how_aggregate = self.how_aggregate,
+                                    afreq_group = afreq_group,
                                     y_label = self.y_Select, x1_label = self.x1_Select, x2_label = self.x2_Select,
                                     force_interactive = self.force_interactive)
                     
@@ -428,7 +444,6 @@ class PlottingPanel(param.Parameterized):
 
     @param.depends('plotting_data_metrics', watch=False)
     def _update_metric_table(self):
-        
         if not hasattr(self.plotting_data_metrics, 'empty'):
             return None
         if not self.plotting_data_metrics.empty:

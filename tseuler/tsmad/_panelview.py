@@ -17,7 +17,7 @@ class PanelView:
         self.targets = targetcols
         self.how_aggregate = how_aggregate
         self.force_interactive = force_interactive
-        
+
         # Initialise Slabs
         self.S1_summ = DataSummaryPanel(data=self.initdata, data_desc = datadesc, dt_freq=dt_freq)
         self.S2_lcfs = LinkedCategoricalFilterSlab(data=self.initdata.copy(), catcols = self.catcols)
@@ -30,13 +30,10 @@ class PanelView:
     def _prep_view(self):
         # Prepare the Top slab
         top_slab = self.S1_summ.get_view()
-
         # Prepare Categorical Mapping Slab
         filter_slab = self.S2_lcfs.get_view()
-
         # Prepare the Selction Slab
         plotting_slab = self.S3_pltp.get_view()
-
         # Combine Full View
         self.view = pn.Column(top_slab,
                               pn.layout.Divider(),

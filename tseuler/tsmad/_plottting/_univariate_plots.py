@@ -18,10 +18,8 @@ plt.style.use('ggplot')
 
 
 def uv_linePlot(data, engine, xlabel, ylabel):
-
-    data = data.copy() 
+    data = data.copy()
     data.rename(columns={'plotX1':ylabel}, inplace=True)
-
     if engine == 'Static':
 
         fig = data[ylabel].plot(figsize=(9,6), legend=True).figure
@@ -232,7 +230,7 @@ def uv_boxPlot(data, engine, xlabel, ylabel, afreq):
         brush = alt.selection(type='interval', encodings=['x'])
         source = data.copy()
         base = alt.Chart(source).mark_boxplot()
-        if afreq not in ['Month Start', 'Month End']:
+        if afreq not in ['M', 'MS']:
             base = base.encode(x=alt.X('anfreq_label:O',
                                         axis=alt.Axis(labelAngle = 45.0),
                                         title = afreq,
@@ -323,9 +321,10 @@ def uv_ridgePlot(data, engine, xlabel, ylabel, afreq):
 
 
 def uv_seasonalPlot(data, engine, xlabel, ylabel, afreq, aggf):
-    
+    #TODO : Original frequqncy wont work
     data = data.dropna().copy()
     data.rename(columns={'plotX1':ylabel}, inplace=True)
+
     if isinstance(aggf, dict):
         aggf = aggf[ylabel]
     data = data.groupby(['anfreq_label', 'anfreq_label1']).agg({ylabel: aggf}).reset_index()
@@ -333,7 +332,7 @@ def uv_seasonalPlot(data, engine, xlabel, ylabel, afreq, aggf):
     if engine == 'Static':
         fig , axes = plt.subplots(figsize=(9.4,5))
         _ = sns.lineplot(x = 'anfreq_label1', y = ylabel, data = data,
-                        hue = 'anfreq_label', marker = 'o', ax = axes, legend='Week' not in afreq)
+                         hue = 'anfreq_label', marker = 'o', ax = axes, legend='Week' not in afreq)
 
         axes.set_xlabel(afreq, fontsize = 15)
         axes.set_ylabel(ylabel, fontsize = 15)
@@ -352,12 +351,12 @@ def uv_seasonalPlot(data, engine, xlabel, ylabel, afreq, aggf):
         _legend = alt.Legend()
         _yencoder = alt.Y('{0}:Q'.format(ylabel), scale=alt.Scale(zero=False), axis=alt.Axis(format='~s'))
 
-        if afreq == 'Year Start':
+        if afreq == 'AS':
             _legend = alt.Legend(type='gradient')
-        elif afreq=='Weeks':
+        elif afreq=='W':
             _xshand = 'anfreq_label1:N'
             _legend = None
-        elif afreq=='Year End':
+        elif afreq=='A':
             _xshand = 'anfreq_label1:N'
             _legend = alt.Legend(type='gradient')
 
@@ -507,16 +506,14 @@ def uv_qqPlot(data, engine, xlabel, ylabel):
 
 
 def uv_maSmoothPlot(data, engine, xlabel, ylabel):
-
     # Data Prep
     data = data.copy() 
     data.rename(columns={'plotX1':ylabel}, inplace=True)
     _config_mawin = TSMAD_CONFIGS['plotting.uv.ma_window']
     if isinstance(_config_mawin, float):
-        ma_win = int(_config_mawin*data.shape[0])
+        ma_win = max([int(_config_mawin*data.shape[0]), 3])
     elif isinstance(_config_mawin, int):
         ma_win = _config_mawin
-
     ma_colname = 'Moving Average ({0})'.format(ma_win)
     data[ma_colname] = data[ylabel].rolling(window=ma_win).mean()
 
@@ -569,13 +566,12 @@ def uv_maSmoothPlot(data, engine, xlabel, ylabel):
 
 
 def uv_expSmoothPlot(data, engine, xlabel, ylabel):
-
     # Data Prep
     data = data.copy() 
     data.rename(columns={'plotX1':ylabel}, inplace=True)
     _config_expspan = TSMAD_CONFIGS['plotting.uv.exp_span']
     if isinstance(_config_expspan, float):
-        exp_span = int(_config_expspan*data.shape[0])
+        exp_span = max([int(_config_expspan*data.shape[0]), 3])
     elif isinstance(_config_expspan, int):
         exp_span = _config_expspan
 
@@ -638,7 +634,7 @@ def uv_fourierSmoothPlot(data, engine, xlabel, ylabel):
     y = data[ylabel].values
     n = len(y)
     x = data[ylabel].index
-    comps = np.unique(np.geomspace(1, int(fcomp_factor*data.shape[0]), 50).astype(int))
+    comps = np.unique(np.geomspace(1, max([int(fcomp_factor*data.shape[0]), 3]), 50).astype(int))
     colors = np.linspace(start=1, stop=255, num=comps.max()*2)
 
     for ecomp in comps:

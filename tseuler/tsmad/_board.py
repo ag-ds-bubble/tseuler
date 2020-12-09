@@ -1,4 +1,5 @@
 # TODO : Fix for analysis frequency mangement
+# TODO : Add methodology for imputation
 
 # Relative Imports
 from ._helpers import TS_FREQUENCIES, AVAILABLE_AGG_FUNC, TS_FORMATS
@@ -28,12 +29,12 @@ class TSMAD:
         sanity_packet = self._check_n_prep(tsdata.copy(), target_columns, categorical_columns,
                                            dt_format, dt_freq, how_aggregate, force_interactive)
 
+        self.dt_freq = dt_freq
+        self.dt_format = dt_format
         self.tsdata = sanity_packet[0]
         self.target_columns = sanity_packet[1]
         self.categorical_columns = sanity_packet[2]
         self.how_aggregate = sanity_packet[3]
-        self.dt_freq = dt_freq
-        self.dt_format = dt_format
         self.force_interactive = force_interactive
 
     def __add__(self, new_board):
@@ -65,12 +66,11 @@ class TSMAD:
         if not isinstance(force_interactive, bool):
             raise TypeError(f"`force_interactive` should be of type `bool`, force_interactive={force_interactive} does not conform to this.")
         
-        
         # Value Checks
         # Check for dt_format
         if not (dt_format in TS_FORMATS):
             raise ValueError(f"`dt_format` should be of one of {TS_FORMATS}, dt_format={TS_FORMATS} does not conform to this.")
-        # Check for dt_freq
+        # Check for dt_freq & get frequency group
         _dtfreq_regex_compile = [re.compile(eftype).fullmatch(dt_freq)!=None for eftype in TS_FREQUENCIES]
         if sum(_dtfreq_regex_compile)!=1:
             raise ValueError(f"`dt_freq` should match one of {TS_FREQUENCIES} regex, dt_freq={dt_freq} does not conform to this.")
@@ -80,6 +80,7 @@ class TSMAD:
         elif sum(_dtfreq_regex_compile[6:])==1:
             if dt_format != '%Y-%m-%d':
                 raise ValueError(f"For dt_freq={dt_freq}, 'dt_format' should be '%Y-%m-%d'")
+        
         # Check for Data Description
         if not isinstance(self.data_desc, str):
             raise ValueError(f"'data_desc' should be of type 'str'")
@@ -110,8 +111,20 @@ class TSMAD:
             
         # Usable and Unusable columns
         self.usable_cols = [e for e in tsdata.columns if any(a in tsdata[e].dtype.__str__() for a in  ['int', 'float', 'category'])]
+        self.plot_cols = [e for e in tsdata.columns if any(a in tsdata[e].dtype.__str__() for a in  ['int', 'float'])]
         self.dropped_cols = [e for e in tsdata.columns if e not in self.usable_cols]
         tsdata = tsdata[self.usable_cols]
+
+        # If there is no 'int' or 'float' category column left, raise error
+        _intcols = 0
+        _floatcols = 0
+        for ecol in tsdata.columns:
+            if 'int' in tsdata[ecol].dtype.__str__():
+                _intcols += 1
+            elif 'float' in tsdata[ecol].dtype.__str__():
+                _floatcols += 1
+        if not any([_floatcols>0, _intcols>0]):
+            raise ValueError(f"`tsdata` has no `int` or `float` cloumns left to plot")
 
         # Sanity check for how_aggregate
         if isinstance(how_aggregate, str):
@@ -124,6 +137,9 @@ class TSMAD:
                 raise ValueError(f"For type(how_aggregate)==dict , `how_aggregate` parameter's keys should be be one of {_keys}")
             if not any(_eval in AVAILABLE_AGG_FUNC for _eval in _vals):
                 raise ValueError(f"For type(how_aggregate)==dict , `how_aggregate` parameter's values should be one of {AVAILABLE_AGG_FUNC}")
+            _missed_plot_cols = list(set(self.plot_cols).difference(set(_keys)))
+            for _mpc in _missed_plot_cols:
+                how_aggregate[_mpc] = 'mean'
         
         # Check if the data conforms to the following dt_freq
         if categorical_columns:
@@ -142,13 +158,11 @@ class TSMAD:
 
     def get_board(self):
         # Sends the board whose elements have been pre-attached
-        self.dash_panel =  PanelView(data = self.tsdata, datadesc = self.data_desc,
-                                     dt_freq = self.dt_freq, dt_format = self.dt_format, how_aggregate = self.how_aggregate,
-                                     catcols = self.categorical_columns, targetcols = self.target_columns, force_interactive = self.force_interactive)
+        self.dash_panel =  PanelView(data = self.tsdata, datadesc = self.data_desc, dt_freq = self.dt_freq,
+                                     dt_format = self.dt_format, how_aggregate = self.how_aggregate,
+                                     catcols = self.categorical_columns, targetcols = self.target_columns,
+                                     force_interactive = self.force_interactive)
         return self.dash_panel.view.servable()
-
-
-
 
 
 TSMAD.__doc__ = """
@@ -220,6 +234,8 @@ TSMAD.__doc__ = """
 
         If the parameter passed is of type `dict` then the keys should columns names
         and the value against each should be the aggregation that needs to be applied.
+        If aggregate functions for some of he plotting columns are not give, then `mean`
+        is assumed for them by default.
 
         For example, for a stock datasets which have the columns of Open, High, Low & Close
         `how_aggregate` parameter can look something like this.

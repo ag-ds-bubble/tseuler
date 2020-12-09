@@ -371,7 +371,7 @@ def bv_violinPlot(data, engine, xlabel, ylabel1, ylabel2):
 def bv_scatterPlot(data, engine, xlabel, ylabel1, ylabel2):
 
     data = data.dropna().copy() 
-    data['year'] = data.apply(lambda x : x.name.year, axis=1)
+    # data['year'] = data.apply(lambda x : x.name.year, axis=1)
     data.rename(columns={'plotY':ylabel1, 'plotX1':ylabel2}, inplace=True)
     if engine == 'Static':
         plt.rcParams['figure.figsize'] = (9,6)
@@ -408,12 +408,12 @@ def bv_regPlot(data, engine, xlabel, ylabel1, ylabel2):
         return pn.pane.Matplotlib(fig.figure, tight=True)
 
     elif engine == 'Interactive':
-        p = alt.Chart(data)
+        p = alt.Chart(data.dropna())
         p = p.mark_point(size=30)
         p = p.encode(x=alt.X('{0}:Q'.format(ylabel1), axis=alt.Axis(format='~s'), scale = alt.Scale(zero=False)),
                      y=alt.Y('{0}:Q'.format(ylabel2), axis=alt.Axis(format='~s'), scale = alt.Scale(zero=False)),
                      color=alt.Color('anfreq_label'), tooltip=[ylabel1,ylabel2])
-        p = p + p.transform_regression(ylabel1, ylabel2).mark_line(color='red')
+        p = p + p.transform_regression(ylabel1, ylabel2).mark_line(color='maroon')
         p = p.properties(width = 520, height = 320)
         return p
 
@@ -459,17 +459,17 @@ def bv_jointPlot(data, engine, xlabel, ylabel1, ylabel2):
                                                 steps=20,as_=[ylabel1, 'Density1'])
         density_x = density_x.mark_area(orient='vertical', opacity=0.5)
         density_x = density_x.encode(x = alt.X('{0}:Q'.format(ylabel1), title='', axis=alt.Axis(format='~s')),
-                                    y = alt.Y('Density1:Q', title='Density'),
-                                    color=alt.Color('anfreq_label:O', scale=alt.Scale(scheme='set1')))
+                                     y = alt.Y('Density1:Q', title='Density', axis=alt.Axis(format='~s')),
+                                     color=alt.Color('anfreq_label:O', scale=alt.Scale(scheme='set1')))
         density_x = density_x.properties(height=50)
 
         density_y = base.transform_filter(brush)
         density_y = density_y.transform_density(density=ylabel2,groupby=['anfreq_label'],
                                                 steps=20, as_=[ylabel2, 'Density2'])
         density_y = density_y.mark_area(orient='horizontal', opacity=0.5)
-        density_y = density_y.encode(x=alt.X('Density2:Q', title='Density'),
-                                    y=alt.Y('{0}:Q'.format(ylabel2), title='', axis=alt.Axis(format='~s')),
-                                    color=alt.Color('anfreq_label:O', scale=alt.Scale(scheme='set1')))
+        density_y = density_y.encode(x=alt.X('Density2:Q', title='Density', axis=alt.Axis(labelAngle=90, format='~s')),
+                                     y=alt.Y('{0}:Q'.format(ylabel2), title='', axis=alt.Axis(format='~s')),
+                                     color=alt.Color('anfreq_label:O', scale=alt.Scale(scheme='set1')))
         density_y = density_y.properties(width=50)
 
         p = density_x & (points | density_y)
