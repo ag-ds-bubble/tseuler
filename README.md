@@ -39,22 +39,19 @@ pip install tseuler
     
     ```py
     import pandas as pd
-    from tseuler import TSMAD
+    import tseuler as tse
     # Read the Time Series DataFrame
-    df = pd.read_csv('TimeSeriesdata3.csv', index_col=0)
-    # Create a DashBoard!
-    tb = TSMAD(tsdata=df, data_desc='Temperature Data',
-                      target_column = ['AverageTemperature'],
-                      categorical_columns = ['Country', 'City'])
-
+    dataDF = pd.read_csv('Raw Data/stocks_data.csv', index_col=0)
+    tsmadObj = tse.TSMAD(tsdata = dataDF, data_desc = 'Stocks Data',
+                     target_columns = ['close'], categorical_columns = ['Name'],
+                     dt_format = '%Y-%m-%d', dt_freq = 'B',
+                     how_aggregate = {'open':'first', 'high':'max', 'low':'min', 'close':'last'},
+                     force_interactive = True)
+    tsmadObj.get_board()
     ```
 
-
-## Versions
-****
-
 `tseuler` has been built upon:-
-
+****
 - pandas
 - numpy
 - panel
@@ -62,6 +59,10 @@ pip install tseuler
 - matplotlib
 - statsmodels
 
-<u>v0.0.1 : Original Package</u>
-- Added TSMAD
 
+
+## History
+****
+<u>v0.0.4dev0 : Development Package</u>
+- Added TSMAD
+- Added TSSTATS
