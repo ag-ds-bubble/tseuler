@@ -9,9 +9,9 @@ versioning : x[Major Fixes].x[Minor Fixes].x[Patch Number].x[Development Version
 """
 
 # Command to upload to testpypi :
-#   cls & rmdir /s /q build dist swtloc.egg-info & python setup_dev.py sdist & python setup_dev.py bdist_wheel & twine upload -r testpypi dist/*
+#   cls & rmdir /s /q build dist tseuler.egg-info & python setup_dev.py sdist & python setup_dev.py bdist_wheel & twine upload -r testpypi dist/*
 # Command to upload to pypi :
-#   cls & rmdir /s /q build dist swtloc.egg-info & python setup.py sdist & python setup.py bdist_wheel & twine upload dist/*
+#   cls & rmdir /s /q build dist tseuler.egg-info & python setup.py sdist & python setup.py bdist_wheel & twine upload dist/*
 
 def parse_requirements(filename):
     """ load requirements from a pip requirements file """
