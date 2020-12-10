@@ -39,7 +39,7 @@ class PlottingPanel(param.Parameterized):
     plotting_data = param.DataFrame()
     plotting_data_metrics = param.DataFrame()
     # Error string
-    operation_error = param.String(default='TsEuler status : All is Well!')
+    operations_status = param.String(default='TSMAD ↦ OK!')
 
     def __init__(self, filterObj, cat_cols, target_cols, data_freq, how_aggregate, force_interactive,**kwargs):
         super(PlottingPanel, self).__init__(**kwargs)
@@ -118,7 +118,7 @@ class PlottingPanel(param.Parameterized):
                                                                   'button_type' : 'primary',
                                                                   'margin' : (12,5,5,5)}})
 
-        self.err_dispPanel = pn.panel('<marquee style="color:white; background-color:#660404;">Plotting...</marquee>', width = 660)
+        # self.err_dispPanel = pn.panel('<marquee style="color:white; background-color:#660404;">Plotting...</marquee>', width = 660)
         x2_row = pn.Row('####(X2) :', self.x2_selectPanel, self.x2_lagPanel, self.x2_trnsrmPanel)
         
         # Plot Selector
@@ -135,7 +135,8 @@ class PlottingPanel(param.Parameterized):
         
         # Initialise the plotting_data_metrics to -- for the call hit
         S3L1 = pn.Column('### Variable Slectors & Transformations:',
-                         self.analysis_variantPanel, y_row, x1_row, x2_row, self.err_dispPanel)
+                         self.analysis_variantPanel, y_row, x1_row, x2_row, self._update_opstatus)
+        # self.operations_status = 'TsEuler  : All is well!'
         S3L2 = pn.Column('### Plot Variant :',
                          self.plot_variantPanel,
                          self.slab_descPane, 
@@ -168,8 +169,6 @@ class PlottingPanel(param.Parameterized):
 
         # Init View & Data
         self._uv_view()
-        self.analysis_variant = 'BV'
-        self.x1_Transformation = 'AS'
 
         return S3
     
@@ -288,6 +287,7 @@ class PlottingPanel(param.Parameterized):
         self.vt_flag = True
         self._update_plotting_data()
 
+
     @param.depends('analysis_variant', watch=True)
     def _update_view(self):
         self.vt_flag = False
@@ -302,6 +302,7 @@ class PlottingPanel(param.Parameterized):
 
         if self.analysis_variant == 'TV' and self.plot_ncols >= 3:
             self._tv_view()
+
 
     @param.depends('y_Select','y_Lags','y_Transformation',
                    'x1_Select','x1_Lags','x1_Transformation',
@@ -318,12 +319,15 @@ class PlottingPanel(param.Parameterized):
                                             self.x1_Transformation,
                                             self.x1_Lags)
             tempDF['plotX1'], tarnsformERR = respacket
-            if tarnsformERR: self.y_trnsrmPanel.value = 'Actual'
+            if tarnsformERR: 
+                self.y_trnsrmPanel.value = 'Actual'
+                self.operations_status = 'TSMAD ↦ ERROR:{0}'.format(tarnsformERR)
+            else:
+                self.operations_status = 'TSMAD ↦ OK!'
             self.plotting_data = tempDF.copy()
             
         elif all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'BV' and self.vt_flag and self.freq_variantPanel!=None:
-            # If the x1_selection and x2_selection is same, then remove that option from x2_selction
-
+            # If the y_selection and x1_selection is same, then remove that option from y_selction
             if len(set([self.y_Select, self.x1_Select])) != 2:
                 _tempobjects = [k for k in self.selectable_cols if k not in [self.x1_Select]]
                 if _tempobjects == []:
@@ -342,12 +346,20 @@ class PlottingPanel(param.Parameterized):
                 tempDF['plotY'], tarnsformERR = respacket
                 if tarnsformERR: 
                     self.y_trnsrmPanel.value = 'Actual'
+                    self.operations_status = 'TSMAD ↦ ERROR:{0}'.format(tarnsformERR)
+                else:
+                    self.operations_status = 'TSMAD ↦ OK!'
+
                 respacket = get_transformed_data(tempDF.X1,
                                                 self.x1_Transformation,
                                                 self.x1_Lags)
                 tempDF['plotX1'], tarnsformERR = respacket
                 if tarnsformERR:
                     self.x1_trnsrmPanel.value = 'Actual'
+                    self.operations_status = 'TSMAD ↦ ERROR:{0}'.format(tarnsformERR)
+                else:
+                    self.operations_status = 'TSMAD ↦ OK!'
+
                 self.plotting_data = tempDF.copy()
 
         elif all(k != '--' for k in [self.y_Select, self.x1_Select, self.x2_Select]) and self.analysis_variant == 'TV' and self.vt_flag and self.freq_variantPanel!=None:
@@ -372,6 +384,9 @@ class PlottingPanel(param.Parameterized):
                 tempDF['plotY'], tarnsformERR = respacket
                 if tarnsformERR: 
                     self.y_trnsrmPanel.value = 'Actual'
+                    self.operations_status = 'TSMAD ↦ ERROR:{0}'.format(tarnsformERR)
+                else:
+                    self.operations_status = 'TSMAD ↦ OK!'
 
                 respacket = get_transformed_data(tempDF.X1,
                                                  self.x1_Transformation,
@@ -379,12 +394,20 @@ class PlottingPanel(param.Parameterized):
                 tempDF['plotX1'], tarnsformERR = respacket
                 if tarnsformERR: 
                     self.x1_trnsrmPanel.value = 'Actual'
+                    self.operations_status = 'TSMAD ↦ ERROR:{0}'.format(tarnsformERR)
+                else:
+                    self.operations_status = 'TSMAD ↦ OK!'
+
                 respacket = get_transformed_data(tempDF.X2,
                                                  self.x2_Transformation,
                                                  self.x2_Lags)
                 tempDF['plotX2'], tarnsformERR = respacket
                 if tarnsformERR: 
                     self.x2_trnsrmPanel.value = 'Actual'
+                    self.operations_status = 'TSMAD ↦ ERROR:{0}'.format(tarnsformERR)
+                else:
+                    self.operations_status = 'TSMAD ↦ OK!'
+
                 self.plotting_data = tempDF.copy()
 
 
@@ -476,7 +499,11 @@ class PlottingPanel(param.Parameterized):
                                             margin=(5, 5, 5, 5), width=300)
             return stat_summaryPane
 
-    @param.depends('operation_error', watch=True)
-    def _update_label(self):
-        pass
 
+    @param.depends('operations_status', watch=False)
+    def _update_opstatus(self):
+        if 'OK!' in self.operations_status:
+            return pn.panel('<marquee style="color:white; background-color:#456635;">{0}</marquee>'.format(self.operations_status), width = 660)
+        elif 'ERROR:' in self.operations_status:
+            return pn.panel('<marquee style="color:white; background-color:#57332d;">{0}</marquee>'.format(self.operations_status), width = 660)
+        

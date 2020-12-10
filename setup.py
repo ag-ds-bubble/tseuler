@@ -24,7 +24,9 @@ def parse_requirements(filename):
 
 # Constants
 REQS = parse_requirements('requirements.txt')
-_next_version = '0.0.1dev'
+from tseuler import __version__
+_next_version = __version__
+
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -40,7 +42,7 @@ setuptools.setup(name="tseuler",
                  url="https://github.com/ag-ds-bubble/tseuler",
                  packages=setuptools.find_packages(),
                  include_package_data = True,
-                 package_data={'tseuler': ['static/logo.png']},
+                 package_data={'tseuler': ['tsmad/_helpers/_logo.png']},
                  install_requires=REQS,
                  classifiers=["Programming Language :: Python :: 3",
                               "Development Status :: 4 - Beta",
