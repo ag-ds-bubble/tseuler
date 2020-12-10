@@ -10,11 +10,16 @@ As of now, this libray is in pre-alpha phase, i.e there is a lot of work still l
 Functionalities Include
 
     - A mini Dashboard for Time Series Analysis, with multiple variations to each kind of analysis
+    - Inbuilt Freqency Variation analysis
+    - Intervention Analysis (In Future) 
     
 
-### TSSTATS - Time Series Statistical Functions
+### TSSTATS - Time Series Statistical & Modelling Functions
 Functionalities Include:
 
+    - Rolling Origin Framework (Currently Supports - statsmodels, sklearn, sklearn) for both multi-variate and uni-variate
+    - Residual Diagnostics
+    - Statistical Tests
     - Entropy Calculations
     - Intervention Analysis (In Future)
 

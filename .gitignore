@@ -6,10 +6,6 @@ __pycache__/
 *.pyc
 **.pyc
 
-.csv
-*.csv
-**.csv
-
 .DS_Store
 *.DS_Store
 **.DS_Store

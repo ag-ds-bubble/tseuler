@@ -6,7 +6,3 @@ from .tsmad._helpers._static import TSMAD_CONFIGS
 from .tsstats import ApproximateEntropry, SampleEntropy
 
 __version__ = '0.0.3dev'
-
-
-                       
-                       
