@@ -37,7 +37,7 @@ def parse_requirements(filename):
 # Constants
 REQS = parse_requirements('requirements.txt')
 _next_version = _next_dev_version('tseuler')
-_next_version = '0.0.12'
+# _next_version = '0.0.12'
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
